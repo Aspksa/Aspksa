@@ -155,3 +155,6 @@
 .drive-zip-list{width:100%;overflow:auto;font:13px/1.7 ui-monospace,monospace;color:#d3e8e8}
 .drive-zip-list>div{padding:7px 10px;border-bottom:1px solid #25434b;overflow-wrap:anywhere}
 .drive-preview-save{background:#127d7a!important;border-color:#20a7a2!important;color:#fff!important}
+
+.drive-restore{color:#6ce2be!important}
+.drive-tabs button[data-tab="trash"].active{background:#21443d;color:#b5f2d6}
