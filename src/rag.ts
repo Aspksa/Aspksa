@@ -24,15 +24,30 @@ async function extractText(file:File):Promise<string>{
 type Chunk={path:string;text:string;terms:Set<string>};
 let chunks:Chunk[]=[];
 let indexed=0;
+let pending:Promise<{files:number;chunks:number;skipped:number}>|null=null;
+let generation=0;
+let indexedGeneration=-1;
+let lastError:string|null=null;
+export function ragState(){return {ready:disk!==null&&indexedGeneration===generation,loading:pending!==null,error:lastError};}
+export function ragInvalidate(){generation++;indexedGeneration=-1;}
+export function ragEnsureIndex(){
+ if(!disk)return Promise.reject(new Error('Сначала подключи USB в разделе «Диск»'));
+ if(pending)return pending.then(()=>indexedGeneration===generation?{files:indexed,chunks:chunks.length,skipped:0}:ragEnsureIndex());
+ if(indexedGeneration===generation)return Promise.resolve({files:indexed,chunks:chunks.length,skipped:0});
+ const target=generation;
+ pending=ragIndex().then(result=>{if(target===generation){indexedGeneration=target;lastError=null;}return result;}).catch(e=>{lastError=String(e);throw e;}).finally(()=>{pending=null;});
+ return pending;
+}
+
 const tokens=(s:string)=>s.toLocaleLowerCase('ru').match(/[\p{L}\p{N}]{3,}/gu)||[];
 export function ragConnected(){return disk!==null;}
 export function ragStats(){return {files:indexed,chunks:chunks.length};}
 export function ragIndexedPaths(){return [...new Set(chunks.map(chunk=>chunk.path))];}
-export function ragAttach(dir:FileSystemDirectoryHandle){disk=dir;chunks=[];indexed=0;}
-export function ragDetach(){disk=null;chunks=[];indexed=0;}
+export function ragAttach(dir:FileSystemDirectoryHandle){disk=dir;chunks=[];indexed=0;ragInvalidate();lastError=null;}
+export function ragDetach(){disk=null;chunks=[];indexed=0;ragInvalidate();lastError=null;}
 export async function ragIndex():Promise<{files:number;chunks:number;skipped:number}>{
  if(!disk)throw Error('Сначала подключи USB в разделе «Диск»');
- const fresh:Chunk[]=[];let files=0,skipped=0,total=0;
+ const source=disk;const fresh:Chunk[]=[];let files=0,skipped=0,total=0;
  async function walk(dir:FileSystemDirectoryHandle,path:string[],depth:number):Promise<void>{
   if(depth>12||files>=MAX_FILES||total>=MAX_TOTAL_CHARS)return;
   for await(const entry of dir.values()){
@@ -48,7 +63,8 @@ export async function ragIndex():Promise<{files:number;chunks:number;skipped:num
    if(files>=MAX_FILES||total>=MAX_TOTAL_CHARS)break;
   }
  }
- await walk(disk,[],0);
+ await walk(source,[],0);
+ if(disk!==source)throw Error('USB-диск изменился во время индексации');
  chunks=fresh;indexed=files;
  return {files,chunks:chunks.length,skipped};
 }

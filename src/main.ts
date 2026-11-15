@@ -1,6 +1,6 @@
 import './style.css';
 import { openDocuments, openDiskSource } from './documents';
-import { ragSearch, ragStats } from './rag';
+import { ragSearch, ragEnsureIndex } from './rag';
 
 type Cluster = { name: string; color: string; count: number; angle: number };
 const clusters: Cluster[] = [
@@ -73,8 +73,7 @@ document.querySelector<HTMLFormElement>('#chat-form')!.addEventListener('submit'
   sending=true;input.disabled=true;
   try {
     const enabled=document.querySelector<HTMLInputElement>('#rag-enabled')!.checked;
-    const stats=ragStats();
-    if(enabled&&stats.chunks===0)throw new Error('RAG ещё не проиндексирован. Открой Диск, подключи USB и нажми «Индексировать для AI»');
+    if(enabled)await ragEnsureIndex();
     const context=enabled?ragSearch(value).map(({path,excerpt})=>({path,excerpt:excerpt.slice(0,1400)})):[];
     if(enabled&&context.length===0)addMessage('В локальных документах не найдено совпадений. Отправляю вопрос без выдержек.','ai');
     if(context.length)showRagSources([...new Set(context.map(x=>x.path))]);
