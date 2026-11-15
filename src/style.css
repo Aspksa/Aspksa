@@ -160,3 +160,20 @@
 .drive-tabs button[data-tab="trash"].active{background:#21443d;color:#b5f2d6}
 
 .rag-toggle{display:flex;align-items:center;gap:9px;color:#a8cbd0;font-size:12px;margin:0 4px 12px;line-height:1.4}.rag-toggle input{accent-color:#24b8aa;width:16px;height:16px}.drive-rag{border-color:#257c79!important;color:#b9f9ef!important}
+
+/* Radial file atlas: dark astronomical UI inspired by the supplied reference. */
+.drive-atlas-wrap{position:relative;margin:20px 0 28px;min-height:510px;overflow:hidden;border:1px solid rgba(65,146,156,.23);border-radius:24px;background:radial-gradient(ellipse at 50% 52%,rgba(21,89,98,.20),transparent 49%),radial-gradient(ellipse at 50% 50%,#0a2330 0%,#061521 72%);box-shadow:inset 0 0 90px #0005,0 22px 50px #0002}
+.drive-atlas-wrap[hidden]{display:none!important}
+.drive-atlas-wrap::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,#60c9c9 0.65px,transparent 1px);background-size:37px 37px;opacity:.12}
+.drive-atlas-heading{position:absolute;left:25px;top:20px;z-index:2;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.drive-atlas-heading span{font:10px ui-monospace,monospace;letter-spacing:.16em;color:#5dd7c8}
+.drive-atlas-heading strong{font-size:19px;letter-spacing:-.02em;color:#e2f6f5}
+.drive-atlas-heading small{font-size:11px;color:#739da8}
+.drive-atlas-view{position:relative;height:510px;width:100%}
+.drive-atlas-canvas{display:block;width:100%;height:100%;touch-action:manipulation}
+.drive-atlas-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;text-align:center}
+.drive-atlas-center strong{font-size:15px;letter-spacing:.14em;color:#ddf9f4;text-shadow:0 0 18px #43bda877}
+.drive-atlas-center span{font:9px ui-monospace,monospace;letter-spacing:.12em;color:#7bb9ba}
+.drive-atlas-legend{position:absolute;bottom:20px;left:24px;z-index:2;color:#7baab4;font:10px ui-monospace,monospace;white-space:pre-wrap;pointer-events:none}
+.drive-atlas-toggle{border-color:#398780!important;color:#81e4d3!important}
+@media(max-width:760px){.drive-atlas-wrap{min-height:350px;border-radius:16px}.drive-atlas-view{height:350px}.drive-atlas-heading{left:14px;top:13px}.drive-atlas-heading strong{font-size:16px}.drive-atlas-heading small{max-width:220px}.drive-atlas-legend{left:12px;bottom:12px;font-size:9px}}
