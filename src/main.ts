@@ -14,12 +14,15 @@ const clusters: Cluster[] = [
   {name:'Безопасность',color:'#a782f9',count:742,angle:199}
 ];
 const app=document.querySelector<HTMLDivElement>('#app')!;
+type ChatMessage = { role: 'user' | 'assistant'; content: string };
+const history: ChatMessage[] = [];
+let sending = false;
 app.innerHTML=`
 <header class="topbar"><div class="brand"><span class="brand-mark">◉</span><div><strong>ASPKSA</strong><small>Второй мозг · RAG · Knowledge Graph</small></div></div><nav><button class="active">Обзор</button><button>Граф</button><button>Документы</button><button>Коллекции</button></nav><span class="top-status"><i></i> LOCAL DEMO</span></header>
 <main class="workspace">
 <aside class="sidebar"><h3>База знаний</h3><button class="navitem selected">◈ &nbsp; Все знания <span>22 094</span></button><button class="navitem">▤ &nbsp; Документы <span>8 432</span></button><button class="navitem">◇ &nbsp; Заметки <span>5 768</span></button><button class="navitem">⌘ &nbsp; Проекты <span>1 294</span></button><h3>Коллекции</h3><div class="legend"><span style="--c:#eeb06b">● Работа</span><span style="--c:#40dfc9">● Исследования</span><span style="--c:#80a8ff">● Обучение</span><span style="--c:#a782f9">● Идеи</span></div><h3>Быстрые действия</h3><button class="action" id="upload">＋ Загрузить документы</button><button class="action" id="reset">↺ Сбросить выделение</button><div class="sync"><b>●</b> Демо-режим · без подключения к RAG</div></aside>
 <section class="atlas" aria-label="Интерактивная карта знаний"><canvas id="graph"></canvas><div class="graph-overlay"><div class="eyebrow">KNOWLEDGE ATLAS / INTERACTIVE</div><div id="selected">Нажмите на сектор, чтобы изучить связи</div></div><div class="atlas-controls"><button id="pause" title="Остановить анимацию">Ⅱ</button><button id="zoomout" title="Уменьшить">−</button><span id="zoomlabel">100%</span><button id="zoomin" title="Увеличить">＋</button></div></section>
-<section class="assistant" aria-label="AI-чат"><div class="assistant-heading"><span class="ai-logo">◉</span><div><h2>AI Ассистент</h2><p>RAG · Поиск · Анализ · Связи</p></div></div><div class="messages" id="messages"><div class="message ai">Привет! Я помогу исследовать твою карту знаний. Выбери кластер слева или задай вопрос.</div></div><form id="chat-form" class="composer"><input id="question" autocomplete="off" aria-label="Сообщение" placeholder="Спросить о знаниях..." required/><button aria-label="Отправить" type="submit">➤</button></form><p class="disclaimer">Демо-интерфейс: ответы пока не подключены к модели или базе документов.</p></section>
+<section class="assistant" aria-label="AI-чат"><div class="assistant-heading"><span class="ai-logo">◉</span><div><h2>AI Ассистент</h2><p>RAG · Поиск · Анализ · Связи</p></div></div><div class="messages" id="messages"><div class="message ai">Привет! Я ASPKSA. Задай вопрос — я отвечу через Cloud.ru, когда сервер будет настроен.</div></div><form id="chat-form" class="composer"><input id="question" autocomplete="off" aria-label="Сообщение" placeholder="Спросить о знаниях..." required/><button aria-label="Отправить" type="submit">➤</button></form><p class="disclaimer">AI: Cloud.ru Foundation Models · RAG-поиск будет подключён отдельно.</p></section>
 </main><input id="file" type="file" hidden multiple accept=".pdf,.txt,.md,.json"/>`;
 const canvas=document.querySelector<HTMLCanvasElement>('#graph')!;
 const ctx=canvas.getContext('2d')!;
@@ -57,7 +60,25 @@ function render(){
 function pick(e:PointerEvent){const b=canvas.getBoundingClientRect(),x=e.clientX-b.left-width*.5,y=e.clientY-b.top-height*.51,angle=(Math.atan2(y,x)*180/Math.PI+360)%360;const radius=Math.hypot(x,y),r=Math.min(width*.46,height*.46)*scale;if(radius<r*.25||radius>r*1.08)return;let best=0,distance=Infinity;clusters.forEach((c,i)=>{const delta=Math.abs(((angle-c.angle+540)%360)-180);if(delta<distance){distance=delta;best=i;}});active=best;const c=clusters[best];document.querySelector('#selected')!.textContent=`${c.name} · ${c.count.toLocaleString('ru-RU')} элементов`;addMessage(`Выбран кластер «${c.name}». В демо отображается структура без реальных данных RAG.`,'ai');}
 canvas.addEventListener('click',pick);
 function addMessage(text:string,role:'ai'|'user'){const list=document.querySelector<HTMLElement>('#messages')!;const node=document.createElement('div');node.className='message '+role;node.textContent=text;list.append(node);list.scrollTop=list.scrollHeight;}
-document.querySelector<HTMLFormElement>('#chat-form')!.addEventListener('submit',e=>{e.preventDefault();const input=document.querySelector<HTMLInputElement>('#question')!;const value=input.value.trim();if(!value)return;addMessage(value,'user');input.value='';addMessage('Это демонстрация интерфейса. Для настоящих ответов нужно подключить RAG API и индекс документов.','ai');});
+document.querySelector<HTMLFormElement>('#chat-form')!.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(sending)return;
+  const input=document.querySelector<HTMLInputElement>('#question')!;
+  const value=input.value.trim();if(!value)return;
+  addMessage(value,'user');input.value='';
+  const pending=[...history,{role:'user' as const,content:value}];
+  sending=true;input.disabled=true;
+  try {
+    const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:pending})});
+    const data:unknown=await response.json();
+    if(!response.ok)throw new Error(typeof data==='object'&&data!==null&&'error' in data?String(data.error):'Ошибка AI-сервера');
+    if(typeof data!=='object'||data===null||!('reply' in data)||typeof data.reply!=='string')throw new Error('Некорректный ответ сервера');
+    addMessage(data.reply,'ai');
+    history.push({role:'user',content:value},{role:'assistant',content:data.reply});
+    if(history.length>20)history.splice(0,history.length-20);
+  }catch(error){addMessage('Cloud.ru недоступен: '+(error instanceof Error?error.message:'неизвестная ошибка')+'. Проверьте настройки серверного API.','ai');}
+  finally{sending=false;input.disabled=false;input.focus();}
+});
 document.querySelector('#pause')!.addEventListener('click',()=>{playing=!playing;document.querySelector('#pause')!.textContent=playing?'Ⅱ':'▶';});
 function zoom(delta:number){scale=Math.min(1.55,Math.max(.65,scale+delta));document.querySelector('#zoomlabel')!.textContent=Math.round(scale*100)+'%';}
 document.querySelector('#zoomin')!.addEventListener('click',()=>zoom(.1));document.querySelector('#zoomout')!.addEventListener('click',()=>zoom(-.1));
