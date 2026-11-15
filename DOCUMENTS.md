@@ -14,7 +14,7 @@ The USB filesystem requires a user-selected directory and browser permission; au
 2. Return to the AI chat and explicitly enable **Использовать документы USB в ответах AI**. The browser retrieves up to four relevant text fragments by lexical keyword overlap and shows their source filenames.
 3. **Privacy:** enabling this option sends the retrieved text excerpts (up to 4 × 1200 characters) with the question to the Cloud.ru AI endpoint via the ASPKSA serverless API. The complete files and the local index are not uploaded. With the option disabled, no file excerpts are sent. This is NOT an offline AI assistant.
 
-This is a first-stage keyword-based RAG, not semantic embeddings/vector search. It does not yet index PDF, DOCX, PPTX, XLSX, images or video. It may miss relevant content when the question uses synonyms. Cloud.ru API credentials and a working Vercel deployment are required for AI responses; neither is verified by this change.
+This is a first-stage keyword-based RAG, not semantic embeddings/vector search. It also extracts text locally from PDF (up to 80 pages, scanned/image-only PDF needs OCR, which is not supported) and DOCX main document body. PPTX, XLSX, images and video are not indexed. It may miss relevant content when the question uses synonyms. Cloud.ru API credentials and a working Vercel deployment are required for AI responses; neither is verified by this change.
 
 ## Radial file atlas
 
@@ -23,3 +23,7 @@ The Disk screen now shows a radial orbit of **actual USB entries** (not demo cou
 ## Hierarchical file orbit
 
 The radial map now traverses nested folders (up to 12 levels and 500 entries), draws parent-to-child links and supports zooming with the mouse wheel or +/- buttons, panning by dragging, and resetting with the center button. Click a point to open its folder or file. Indexed text files are ringed in green after pressing **Индексировать для AI**. The visual relationships represent **filesystem parent-child structure**, not semantic similarity between documents. The map is local-only and does not send file metadata to Cloud.ru. The file grid and search still work separately.
+
+## Open AI source files
+
+After a RAG search finds excerpts, the chat displays clickable source file paths. Clicking one opens the Disk UI and previews that exact file, provided the USB directory is still connected. When USB access is absent, the Disk prompts for reconnection. No document is automatically sent to the model by clicking the source. PDF and DOCX extraction is browser-local; only retrieved excerpts are sent to Cloud.ru when the user opts into RAG. PDF text extraction uses pdfjs-dist; scanned PDFs without a text layer are not supported. The RAG index must be rebuilt after edits or reloads.
