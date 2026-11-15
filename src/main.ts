@@ -74,7 +74,7 @@ document.querySelector<HTMLFormElement>('#chat-form')!.addEventListener('submit'
   try {
     const enabled=document.querySelector<HTMLInputElement>('#rag-enabled')!.checked;
     if(enabled)await ragEnsureIndex();
-    const context=enabled?ragSearch(value).map(({path,excerpt})=>({path,excerpt:excerpt.slice(0,1400)})):[];
+    const context=enabled?(await ragSearch(value)).map(({path,excerpt})=>({path,excerpt:excerpt.slice(0,1400)})):[];
     if(enabled&&context.length===0)addMessage('В локальных документах не найдено совпадений. Отправляю вопрос без выдержек.','ai');
     if(context.length)showRagSources([...new Set(context.map(x=>x.path))]);
     const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:pending,context})});

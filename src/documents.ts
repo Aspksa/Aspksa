@@ -147,7 +147,7 @@ export function openDocuments(){
  const refresh=async()=>{
   const list=root.querySelector<HTMLElement>('.drive-list')!,crumbs=root.querySelector<HTMLElement>('.drive-crumbs')!;
   atlasCleanup?.();atlasCleanup=null;list.replaceChildren();crumbs.replaceChildren();connection();
-  const ragLabel=root.querySelector<HTMLElement>('.drive-rag-status')!;const rag=ragState(),stats=ragStats();ragLabel.textContent=!drive?'RAG: ожидание USB':rag.loading?'RAG: индексация…':rag.ready?'RAG: '+stats.files+' файлов':rag.error?'RAG: ошибка чтения':'RAG: подготовка…';
+  const ragLabel=root.querySelector<HTMLElement>('.drive-rag-status')!;const rag=ragState(),stats=ragStats();ragLabel.textContent=!drive?'RAG: ожидание USB':rag.loading?'RAG: OCR и поиск…':rag.ready?'RAG: '+stats.files+' файлов · '+(rag.semantic==='ready'?'по смыслу':'по словам'):rag.error?'RAG: ошибка чтения':'RAG: подготовка…';
   const atlasWrap=root.querySelector<HTMLElement>('.drive-atlas-wrap')!;atlasWrap.hidden=!atlasVisible||tab==='trash';
   if(!drive){status('Подключи USB-диск — папка Aspksa/Диск создастся автоматически.');list.append(text('div','drive-empty','◈  Подключи USB-диск, чтобы увидеть свои папки и файлы.'));return;}
   const home=text('button','','⌂  Aspksa / Диск');home.addEventListener('click',()=>{current=[];void refresh();});crumbs.append(home);

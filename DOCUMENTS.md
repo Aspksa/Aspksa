@@ -31,3 +31,13 @@ After a RAG search finds excerpts, the chat displays clickable source file paths
 ## Automatic RAG indexing
 
 The manual **Индексировать для AI** button has been removed. Indexing begins automatically after the user grants access to the USB folder and reconnects it in the Disk UI. The UI shows a RAG status indicator. Uploading, saving text, renaming, deleting, restoring or extracting files through ASPKSA invalidates the index and schedules a rebuild. When RAG is enabled in chat, the chat waits for indexing to complete. Indexing stays local; only explicitly enabled retrieved excerpts are sent to Cloud.ru. Changes made by other programs directly on the USB disk are not watched continuously; reconnect to refresh them. Browser permission and the USB disk are still required.
+
+## Automatic semantic RAG, OCR and Office indexing
+
+After USB access is granted, ASPKSA automatically extracts and indexes supported files. **No manual indexing button is required.** In addition to TXT/MD/CSV/JSON/LOG/PDF/DOCX, it extracts cell values and shared strings from XLSX and slide text from PPTX. Formulas are represented by cached cell values when present; charts, embedded images and complex layouts are not interpreted.
+
+Scanned PDF pages with little or no selectable text trigger browser-side OCR using Tesseract.js (Russian and English). OCR is capped at 8 pages per PDF, and PDF scanning is capped at 80 pages. OCR quality depends on image quality and language. The first OCR run downloads language/model assets; internet connectivity and sufficient device resources are required.
+
+For semantic retrieval, the browser downloads a multilingual sentence-embedding model and calculates vectors locally for up to 100 text chunks per index. The chat uses hybrid semantic + keyword scoring. If the model cannot load, keyword search remains available; the Disk shows **по словам** instead of **по смыслу**. The first model download and CPU indexing can take significant time; this is not an unlimited vector database. Indexed files are capped at 400, input file size at 8 MB, and total extracted text at 2 million characters. Other programs' edits on the USB are not monitored; reconnect the disk to refresh.
+
+**Privacy:** OCR and embedding inference run in the browser; model and language files are downloaded from third-party hosting. The document text is not sent to those hosts by this implementation. As before, only if the user enables RAG in chat are selected excerpts sent to the Cloud.ru AI API. The index is not saved to a server. Browser build, model downloads, OCR runtime, and USB integration have not yet been verified.
