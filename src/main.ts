@@ -1,4 +1,5 @@
 import './style.css';
+import { openDocuments } from './documents';
 
 type Cluster = { name: string; color: string; count: number; angle: number };
 const clusters: Cluster[] = [
@@ -83,5 +84,6 @@ document.querySelector('#pause')!.addEventListener('click',()=>{playing=!playing
 function zoom(delta:number){scale=Math.min(1.55,Math.max(.65,scale+delta));document.querySelector('#zoomlabel')!.textContent=Math.round(scale*100)+'%';}
 document.querySelector('#zoomin')!.addEventListener('click',()=>zoom(.1));document.querySelector('#zoomout')!.addEventListener('click',()=>zoom(-.1));
 document.querySelector('#reset')!.addEventListener('click',()=>{active=-1;document.querySelector('#selected')!.textContent='Нажмите на сектор, чтобы изучить связи';});
-document.querySelector('#upload')!.addEventListener('click',()=>document.querySelector<HTMLInputElement>('#file')!.click());
+document.querySelector('#upload')!.addEventListener('click',openDocuments);
+document.querySelectorAll<HTMLButtonElement>('.topbar nav button').forEach(button=>{if(button.textContent?.trim()==='Документы')button.addEventListener('click',openDocuments);});
 document.querySelector<HTMLInputElement>('#file')!.addEventListener('change',e=>{const files=(e.target as HTMLInputElement).files;if(files?.length)addMessage(`Выбрано файлов: ${files.length}. Загрузка на сервер пока не настроена.`,'ai');});
