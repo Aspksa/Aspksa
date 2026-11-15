@@ -229,3 +229,8 @@
 .legal-lesson{padding:9px 2px;border-bottom:1px solid #29434d;font-size:11px}
 .legal-lesson strong{display:block;color:#cde8e9}.legal-lesson p{margin:5px 0;color:#8eb4bb;white-space:pre-wrap}
 .legal-lesson input{background:#0b2530;color:#def6f4;border:1px solid #28545b;border-radius:5px;max-width:100%;padding:6px;font-size:11px}
+
+/* Approved legal knowledge base */
+.legal-knowledge-form{display:flex;flex-direction:column;gap:7px;padding:9px 0}
+.legal-knowledge-form input,.legal-knowledge-form textarea,.legal-knowledge-form select{width:100%;background:#0b2530;color:#def6f4;border:1px solid #28545b;border-radius:6px;padding:8px;font:11px system-ui}
+.legal-knowledge-form button,#legal-knowledge-panel>button{border:1px solid #28545b;background:#10323b;color:#ccebea;border-radius:7px;padding:8px;font-size:11px}
