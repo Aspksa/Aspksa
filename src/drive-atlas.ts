@@ -8,7 +8,7 @@ export function drawDiskAtlas(host:HTMLElement,items:DiskNode[],onOpen:(node:Dis
  const center=document.createElement('div');center.className='drive-atlas-center';center.innerHTML='<strong>ASPKSA</strong><span>ДИСК / ФАЙЛЫ</span>';host.append(center);
  const ctx=canvas.getContext('2d');if(!ctx)return()=>{};
  const colors=['#56e2c6','#75a9fa','#f0b477','#aa8df3'];
- const category=(n:DiskNode)=>n.kind==='directory'?0:/\\.(jpg|jpeg|png|gif|webp|svg|mp4|webm|mp3|wav|flac|m4a)$/i.test(n.name)?2:/\\.(zip|rar|7z)$/i.test(n.name)?3:1;
+ const category=(n:DiskNode)=>n.kind==='directory'?0:/\.(jpg|jpeg|png|gif|webp|svg|mp4|webm|mp3|wav|flac|m4a)$/i.test(n.name)?2:/\.(zip|rar|7z)$/i.test(n.name)?3:1;
  const groups=[0,1,2,3].map(type=>items.filter(n=>category(n)===type));
  let points:{x:number;y:number;node:DiskNode;type:number}[]=[];
  let hover:DiskNode|null=null;
@@ -20,7 +20,7 @@ export function drawDiskAtlas(host:HTMLElement,items:DiskNode[],onOpen:(node:Dis
   ctx.clearRect(0,0,width,height);const cx=width/2,cy=height/2;
   const r=Math.min(width*.43,height*.43);points=[];
   for(const factor of [.28,.43,.6,.79,1]){ctx.beginPath();ctx.arc(cx,cy,r*factor,0,Math.PI*2);ctx.strokeStyle='rgba(95,175,182,.14)';ctx.lineWidth=1;ctx.stroke();}
-  const active=groups.filter(g=>g.length>0);let offset=-Math.PI/2;
+  let offset=-Math.PI/2;
   for(let type=0;type<4;type++){
    const group=groups[type];if(!group.length)continue;
    const span=(Math.PI*2)*(group.length/items.length);
