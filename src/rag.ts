@@ -32,10 +32,10 @@ export function ragState(){return {ready:disk!==null&&indexedGeneration===genera
 export function ragInvalidate(){generation++;indexedGeneration=-1;}
 export function ragEnsureIndex(){
  if(!disk)return Promise.reject(new Error('Сначала подключи USB в разделе «Диск»'));
- if(pending)return pending;
+ if(pending)return pending.then(()=>indexedGeneration===generation?{files:indexed,chunks:chunks.length,skipped:0}:ragEnsureIndex());
  if(indexedGeneration===generation)return Promise.resolve({files:indexed,chunks:chunks.length,skipped:0});
  const target=generation;
- pending=ragIndex().then(result=>{if(target===generation)indexedGeneration=target;lastError=null;return result;}).catch(e=>{lastError=String(e);throw e;}).finally(()=>{pending=null;});
+ pending=ragIndex().then(result=>{if(target===generation){indexedGeneration=target;lastError=null;}return result;}).catch(e=>{lastError=String(e);throw e;}).finally(()=>{pending=null;});
  return pending;
 }
 
