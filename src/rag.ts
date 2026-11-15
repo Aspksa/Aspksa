@@ -8,6 +8,7 @@ let indexed=0;
 const tokens=(s:string)=>s.toLocaleLowerCase('ru').match(/[\p{L}\p{N}]{3,}/gu)||[];
 export function ragConnected(){return disk!==null;}
 export function ragStats(){return {files:indexed,chunks:chunks.length};}
+export function ragIndexedPaths(){return [...new Set(chunks.map(chunk=>chunk.path))];}
 export function ragAttach(dir:FileSystemDirectoryHandle){disk=dir;chunks=[];indexed=0;}
 export function ragDetach(){disk=null;chunks=[];indexed=0;}
 export async function ragIndex():Promise<{files:number;chunks:number;skipped:number}>{
