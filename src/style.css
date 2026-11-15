@@ -158,3 +158,5 @@
 
 .drive-restore{color:#6ce2be!important}
 .drive-tabs button[data-tab="trash"].active{background:#21443d;color:#b5f2d6}
+
+.rag-toggle{display:flex;align-items:center;gap:9px;color:#a8cbd0;font-size:12px;margin:0 4px 12px;line-height:1.4}.rag-toggle input{accent-color:#24b8aa;width:16px;height:16px}.drive-rag{border-color:#257c79!important;color:#b9f9ef!important}
