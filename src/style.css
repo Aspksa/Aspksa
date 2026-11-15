@@ -135,3 +135,16 @@
 .drive-rows .drive-name{font-weight:500}
 .drive-empty{border:1px dashed #28515a;border-radius:18px;background:#0e2632;padding:55px 18px;margin-top:10px}
 @media(max-width:760px){.drive{padding:20px 15px 35px}.drive-head{gap:10px}.drive-brand{gap:10px}.drive-brand-icon{width:42px;height:42px;font-size:26px}.drive-head-right{gap:7px}.drive-connection{font-size:10px;padding:6px 8px}.drive-location-bar{flex-direction:column;align-items:stretch;padding:12px}.drive-search-wrap{max-width:none;width:100%;min-width:0}.drive-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.drive-grid .drive-item{padding:13px;min-height:180px}.drive-grid .drive-icon{font-size:34px}.drive-section-heading span{display:none}.drive-tabs{overflow-x:auto;flex-wrap:nowrap}.drive-tabs button{white-space:nowrap}.drive-actions button{padding:9px 11px;font-size:12px}}
+
+/* File preview lightbox */
+.drive-preview-overlay{position:fixed;inset:0;z-index:100;background:rgba(1,10,17,.83);backdrop-filter:blur(9px);display:flex;align-items:center;justify-content:center;padding:24px}
+.drive-preview-panel{display:flex;flex-direction:column;width:min(1050px,100%);height:min(800px,92dvh);background:#0b202c;border:1px solid #32606b;border-radius:20px;overflow:hidden;box-shadow:0 30px 90px #0009}
+.drive-preview-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #254550}
+.drive-preview-head strong{flex:1;min-width:0;overflow-wrap:anywhere;font-size:15px}
+.drive-preview-head button{background:#17424d;border:1px solid #32606b;border-radius:10px;padding:9px 13px;font-size:13px}
+.drive-preview-body{flex:1;min-height:0;overflow:auto;display:flex;align-items:stretch;justify-content:center;padding:16px}
+.drive-preview-text{white-space:pre-wrap;overflow-wrap:anywhere;width:100%;margin:0;font:13px/1.7 ui-monospace,monospace;color:#d8eeee}
+.drive-preview-frame{width:100%;height:100%;border:0;background:#fff;border-radius:8px}
+.drive-preview-image{object-fit:contain;max-width:100%;max-height:100%;margin:auto}
+.drive-preview-unsupported{margin:auto;text-align:center;color:#9db9c2}
+@media(max-width:760px){.drive-preview-overlay{padding:8px}.drive-preview-panel{height:95dvh;border-radius:13px}.drive-preview-head{padding:12px}.drive-preview-head strong{font-size:12px}.drive-preview-head button{padding:7px;font-size:11px}}
