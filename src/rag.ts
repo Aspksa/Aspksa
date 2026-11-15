@@ -1,5 +1,8 @@
 import { extractFileText } from './rag-extract';
 import { embed, similarity } from './rag-semantic';
+export type RagSource={path:string;excerpt:string;score:number};
+let disk:FileSystemDirectoryHandle|null=null;
+const MAX_FILES=400,MAX_FILE_BYTES=8_000_000,MAX_TOTAL_CHARS=2_000_000;
 type Chunk={path:string;text:string;terms:Set<string>;vector?:Float32Array};
 let chunks:Chunk[]=[];
 let indexed=0;
@@ -50,10 +53,10 @@ export async function ragIndex():Promise<{files:number;chunks:number;skipped:num
  // lexical search remains available without uploading any file content.
  try{
   for(const chunk of fresh.slice(0,100)){
-   if(disk!==source)break;
+   if(disk!==source)throw Error('USB-диск изменился');
    chunk.vector=await embed(chunk.text);
   }
-  semanticStatus='ready';
+  semanticStatus=fresh.length?'ready':'fallback';
  }catch(e){semanticStatus='fallback';console.warn('Semantic RAG unavailable, lexical fallback:',e);}
  return {files,chunks:chunks.length,skipped};
 }
