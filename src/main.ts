@@ -1,3 +1,4 @@
+import {legalRoles,legalTasks,runLegalDepartment,type LegalTask,type LegalAgentState} from './legal-agents';
 import './style.css';
 import { openDocuments, openDiskSource } from './documents';
 import { ragMultiSearch, ragEnsureIndex, ragLinks, ragState, ragPlan, ragVersions, ragFacts } from './rag';
@@ -19,13 +20,21 @@ const app=document.querySelector<HTMLDivElement>('#app')!;
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 const history: ChatMessage[] = [];
 let sending = false;
+let selectedLegalTask:LegalTask|null=null;
+let legalStages:LegalAgentState[]=legalRoles.map(role=>({role:role.id,status:'ожидает',result:''}));
 app.innerHTML=`
 <header class="topbar"><div class="brand"><span class="brand-mark">◉</span><div><strong>ASPKSA</strong><small>Второй мозг · RAG · Knowledge Graph</small></div></div><nav><button class="active">Обзор</button><button>Граф</button><button>Документы</button><button>Коллекции</button></nav><span class="top-status"><i></i> LOCAL DEMO</span></header>
 <main class="workspace">
 <aside class="sidebar"><h3>База знаний</h3><button class="navitem selected">◈ &nbsp; Все знания <span>22 094</span></button><button class="navitem">▤ &nbsp; Документы <span>8 432</span></button><button class="navitem">◇ &nbsp; Заметки <span>5 768</span></button><button class="navitem">⌘ &nbsp; Проекты <span>1 294</span></button><h3>Коллекции</h3><div class="legend"><span style="--c:#eeb06b">● Работа</span><span style="--c:#40dfc9">● Исследования</span><span style="--c:#80a8ff">● Обучение</span><span style="--c:#a782f9">● Идеи</span></div><h3>Быстрые действия</h3><button class="action" id="upload">＋ Загрузить документы</button><button class="action" id="reset">↺ Сбросить выделение</button><div class="sync"><b>●</b> Демо-режим · без подключения к RAG</div></aside>
-<section class="atlas" aria-label="Интерактивная карта знаний"><canvas id="graph"></canvas><div class="graph-overlay"><div class="eyebrow">KNOWLEDGE ATLAS / INTERACTIVE</div><div id="selected">Нажмите на сектор, чтобы изучить связи</div></div><div class="atlas-controls"><button id="pause" title="Остановить анимацию">Ⅱ</button><button id="zoomout" title="Уменьшить">−</button><span id="zoomlabel">100%</span><button id="zoomin" title="Увеличить">＋</button></div></section>
+<section class="atlas" aria-label="Интерактивная карта знаний"><div class="legal-dashboard" id="legal-dashboard" aria-label="Юридическое управление"><div class="legal-dashboard-title">⚖ Юридическое управление <small id="legal-summary">4 агента · ожидают поручения</small></div><div class="legal-team" id="legal-team"></div><div class="legal-actions" id="legal-actions"></div><p class="legal-hint">Результаты AI — проекты для проверки и утверждения сотрудником.</p></div><canvas id="graph"></canvas><div class="graph-overlay"><div class="eyebrow">KNOWLEDGE ATLAS / INTERACTIVE</div><div id="selected">Нажмите на сектор, чтобы изучить связи</div></div><div class="atlas-controls"><button id="pause" title="Остановить анимацию">Ⅱ</button><button id="zoomout" title="Уменьшить">−</button><span id="zoomlabel">100%</span><button id="zoomin" title="Увеличить">＋</button></div></section>
 <section class="assistant" aria-label="AI-чат"><div class="assistant-heading"><span class="ai-logo">◉</span><div><h2>AI Ассистент</h2><p>RAG · Поиск · Анализ · Связи</p></div></div><div class="messages" id="messages"><div class="message ai">Привет! Я ASPKSA. Задай вопрос — я отвечу через Cloud.ru, когда сервер будет настроен.</div></div><label class="rag-toggle"><input id="rag-enabled" type="checkbox"/> Использовать документы USB в ответах AI</label><form id="chat-form" class="composer"><input id="question" autocomplete="off" aria-label="Сообщение" placeholder="Спросить о знаниях..." required/><button aria-label="Отправить" type="submit">➤</button></form><p class="disclaimer">RAG: поиск выполняется локально; только найденные выдержки отправляются в Cloud.ru при включённой опции.</p></section>
 </main><input id="file" type="file" hidden multiple accept=".pdf,.txt,.md,.json"/>`;
+const team=document.querySelector<HTMLElement>('#legal-team')!;
+const actions=document.querySelector<HTMLElement>('#legal-actions')!;
+function drawLegalTeam(){team.replaceChildren();for(const role of legalRoles){const stage=legalStages.find(s=>s.role===role.id)!;const card=document.createElement('div');card.className='legal-agent '+stage.status;const title=document.createElement('strong');title.textContent=role.name;const status=document.createElement('small');status.textContent=stage.status+' · '+role.task;card.append(title,status);team.append(card);}document.querySelector('#legal-summary')!.textContent=legalStages.filter(s=>s.status==='готово').length+'/4 завершили этап';}
+function chooseLegalTask(task:LegalTask){selectedLegalTask=task;for(const b of actions.querySelectorAll('button'))b.classList.toggle('active',b.dataset.task===task);const input=document.querySelector<HTMLInputElement>('#question')!;input.placeholder=legalTasks.find(t=>t.id===task)!.prompt;input.focus();addMessage('Юридическое управление: '+legalTasks.find(t=>t.id===task)!.label+'. Опиши задачу в чате. Для использования документов USB включи RAG.','ai');}
+for(const task of legalTasks){const button=document.createElement('button');button.type='button';button.dataset.task=task.id;button.textContent=task.label;button.addEventListener('click',()=>chooseLegalTask(task.id));actions.append(button);}
+drawLegalTeam();
 const canvas=document.querySelector<HTMLCanvasElement>('#graph')!;
 const ctx=canvas.getContext('2d')!;
 const atlas=document.querySelector<HTMLElement>('.atlas')!;
@@ -80,6 +89,14 @@ document.querySelector<HTMLFormElement>('#chat-form')!.addEventListener('submit'
     if(enabled){addMessage('План проверки:\n'+ragPlan(value).map((step,i)=>(i+1)+'. '+step).join('\n'),'ai');const versions=ragVersions().filter(group=>group.versions.some(v=>found.some(r=>r.path===v.path))).slice(0,3);if(versions.length)addMessage('Возможные редакции (по имени файла; дата действия не подтверждена): '+versions.map(g=>g.group+': '+g.versions.map(v=>v.path+' ['+v.date+']').join(', ')).join('; '),'ai');}
     if(enabled&&context.length===0)addMessage('В локальных документах не найдено совпадений. Отправляю вопрос без выдержек.','ai');
     if(context.length){showRagSources([...new Set(context.map(x=>x.path))]);const citations=found.map((r,i)=>'['+(i+1)+'] '+r.path+' · '+(r.locator||'позиция не установлена')+' · фактов: '+ragFacts(r.path).length);addMessage('Локальные доказательства:\n'+citations.join('\n'),'ai');const note=ragState();addMessage('Найдено фрагментов: '+context.length+'; связей между документами: '+note.links+'. Ответ AI должен опираться на показанные источники; отсутствие сведений не означает отсутствие события.','ai');}
+    if(selectedLegalTask){
+      legalStages=legalRoles.map(role=>({role:role.id,status:'ожидает',result:''}));drawLegalTeam();
+      const result=await runLegalDepartment(selectedLegalTask,value,context,stages=>{legalStages=stages;drawLegalTeam();});
+      for(const stage of result.stages){addMessage(legalRoles.find(r=>r.id===stage.role)!.name+' — '+stage.status+'\n'+stage.result,'ai');}
+      history.push({role:'user',content:value},{role:'assistant',content:result.final});if(history.length>20)history.splice(0,history.length-20);
+      addMessage('Проект подготовлен четырьмя AI-агентами. Не подписан и не утверждён юридическим управлением предприятия.','ai');
+      return;
+    }
     const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:pending,context})});
     const data:unknown=await response.json();
     if(!response.ok)throw new Error(typeof data==='object'&&data!==null&&'error' in data?String(data.error):'Ошибка AI-сервера');

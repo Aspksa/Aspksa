@@ -202,3 +202,21 @@
 .contract-clause{padding:12px 14px;background:#0c2933;border:1px solid #254d56;border-radius:10px;overflow-wrap:anywhere;white-space:pre-wrap}
 .contract-clause p{margin:6px 0 0}
 .contract-ask{text-align:left;margin:4px 0}
+
+/* Legal department — live workflow on the main knowledge atlas */
+.legal-dashboard{position:absolute;z-index:5;top:100px;left:24px;width:min(430px,calc(100% - 48px));max-height:calc(100% - 200px);overflow:auto;padding:16px;background:rgba(6,23,33,.93);border:1px solid rgba(74,169,169,.4);border-radius:16px;box-shadow:0 12px 40px #0006;backdrop-filter:blur(12px)}
+.legal-dashboard-title{font-size:15px;font-weight:700;display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
+.legal-dashboard-title small{font-size:10px;color:#8db5b9;font-weight:400}
+.legal-team{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.legal-agent{padding:10px;border-radius:10px;border:1px solid #29434d;background:#0b2530;min-height:66px}
+.legal-agent strong,.legal-agent small{display:block}
+.legal-agent strong{font-size:12px;color:#d6f6f5}
+.legal-agent small{font-size:10px;color:#8daeb5;margin-top:6px;line-height:1.4}
+.legal-agent.работает{border-color:#4cd9c8;box-shadow:0 0 12px #29cdb333;animation:legal-pulse 1.5s ease-in-out infinite}
+.legal-agent.готово{border-color:#38866c}.legal-agent.ошибка{border-color:#b85d65}
+@keyframes legal-pulse{50%{box-shadow:0 0 22px #29cdb377}}
+.legal-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:12px}
+.legal-actions button{border:1px solid #28545b;background:#10323b;color:#ccebea;border-radius:9px;padding:9px 5px;font-size:11px}
+.legal-actions button.active{background:#116267;border-color:#52c9bc}
+.legal-hint{font-size:10px;color:#86a9b0;line-height:1.5;margin:12px 0 0}
+@media(max-width:760px){.legal-dashboard{top:76px;left:12px;width:calc(100% - 24px);max-height:245px;padding:10px}.legal-dashboard-title{font-size:12px}.legal-agent{min-height:45px;padding:7px}.legal-agent small{font-size:9px}.legal-actions button{padding:6px;font-size:10px}}
