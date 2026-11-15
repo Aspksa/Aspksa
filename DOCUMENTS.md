@@ -71,3 +71,15 @@ RAG сохраняет извлечённый текст и метаданные
 Из текста локально выделяются номера договоров, счетов, актов, спецификаций, приложений и ИНН. Совпадающие реквизиты образуют **предположительные** связи документов; ссылка на имя файла также может дать предположительную связь. Связи и связанные с ними источники видны в AI-чате, а поиск усиливает совпадения между связанными файлами. Это не подтверждение исполнения, платежа или юридического факта. Ссылки на конкретные страницы, версии действовавшие на дату, проверка полного документооборота, OCR надёжность и автоматический мониторинг изменений вне ASPKSA пока не реализованы. Многошаговый агент с планированием и проверкой доказательств пока не реализован: поиск расширен связями, но не является полноценным reasoning engine.
 
 Локальная индексация не отправляет документы в Cloud.ru. Только при включённом RAG и отправке сообщения выбранные фрагменты (не более четырёх) передаются серверному AI. Кеш IndexedDB хранится в браузере, а не на USB.
+
+## RAG evidence and multi-document retrieval
+
+Implemented initial versions of the five requested enhancements:
+
+1. Multi-step *retrieval plan* in chat and up to three local query variants for a single question (contract, act, invoice/payment), with diverse source selection. The server model still receives a maximum of four snippets; there is no autonomous agent that can request further tools or confirm actual payments.
+2. Candidate version groups are inferred from similar file names and version/date suffixes. Dates are shown only when explicitly encoded in the filename; file modification time is **not** treated as the legal effective date. No historical snapshot store or legal validity timeline yet.
+3. PDF text extraction now inserts `[page N]` markers, and RAG evidence labels identify the nearest preceding page marker and the extracted-text line. DOCX/XLSX/PPTX show extracted-text lines, not true pages. OCR-derived page text can be inaccurate; source markers are not proof that an AI quotation is correct.
+4. Evidence reranking boosts exact long-number matches, query-term coverage and limited document-link evidence. It remains heuristic, not a trained cross-encoder.
+5. Extraction recognizes candidate INN, contract references, dates, amounts and Russian legal-entity names. It does not verify tax identifiers, payment execution or entity identity.
+
+The local IndexedDB cache namespace is upgraded to v2 so existing PDFs are re-extracted with page markers. Browser access to the USB folder remains permission-based. RAG opt-in remains required before any excerpts are sent to Cloud.ru. Always verify the original document before relying on an answer.

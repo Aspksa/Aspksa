@@ -1,7 +1,12 @@
+import {factsFromText,detectVersions,rerank,planQuestion,evidenceLocator,type Evidence} from './rag-evidence';
 import { extractFileText } from './rag-extract';
 import { embed, similarity } from './rag-semantic';
 import {loadCache,storeCache,extractIdentifiers,extractReferences,linkDocuments,relatedPaths,type IndexedDocument,type DocumentLink} from './rag-memory';
-export type RagSource={path:string;excerpt:string;score:number};
+export type RagSource={path:string;excerpt:string;score:number;locator?:string};
+export function ragVersions(){return detectVersions(documents);}
+export function ragFacts(path:string){const d=documents.find(x=>x.path===path);return d?factsFromText(d.text):[];}
+export function ragPlan(question:string){return planQuestion(question);}
+export function ragEvidence(question:string,limit=4):Promise<Evidence[]>{return ragSearch(question,limit).then(results=>results.map(r=>({path:r.path,excerpt:r.excerpt,score:r.score,locator:r.locator||'позиция не установлена',facts:factsFromText(r.excerpt)})));}
 let disk:FileSystemDirectoryHandle|null=null;
 const MAX_FILES=400,MAX_FILE_BYTES=8_000_000,MAX_TOTAL_CHARS=2_000_000;
 type Chunk={path:string;text:string;terms:Set<string>;vector?:Float32Array};
@@ -86,8 +91,28 @@ export async function ragSearch(question:string,limit=4):Promise<RagSource[]>{
   const evidence=initial.filter(other=>neighbors.includes(other.path)).slice(0,3);
   return {...item,score:item.score+evidence.reduce((sum,x)=>sum+Math.min(x.score,4)*0.15,0)};
  }).sort((a,b)=>b.score-a.score);
- const chosen=boosted.slice(0,limit);
+ const ranked=rerank(question,boosted.map(item=>({...item,locator:evidenceLocator(documents.find(d=>d.path===item.path)?.text||'',item.excerpt),facts:factsFromText(item.excerpt)})),links);
+ const chosen=ranked.slice(0,limit).map(({path,excerpt,score,locator})=>({path,excerpt,score,locator}));
  // A second hop adds related evidence only when it has positive text relevance.
- if(chosen.length<limit){const seen=new Set(chosen.map(c=>c.path));for(const item of initial){if(chosen.length>=limit)break;if(seen.has(item.path))continue;chosen.push(item);seen.add(item.path);}}
+ if(chosen.length<limit){const seen=new Set(chosen.map(c=>c.path));for(const item of initial){if(chosen.length>=limit)break;if(seen.has(item.path))continue;chosen.push({...item,locator:evidenceLocator(documents.find(d=>d.path===item.path)?.text||'',item.excerpt)});seen.add(item.path);}}
+ return chosen;
+}
+
+export async function ragMultiSearch(question:string,limit=4):Promise<RagSource[]>{
+ const q=question.toLocaleLowerCase('ru');
+ const queries=[question];
+ if(/договор|контракт|постав|исполн|обязательств/i.test(q))queries.push(question+' приложение спецификация акт');
+ if(/оплат|долг|сч[её]т|плат[её]ж|исполн/i.test(q))queries.push(question+' счёт оплата платежный документ');
+ const results=await Promise.all(queries.slice(0,3).map(query=>ragSearch(query,Math.max(limit*3,8))));
+ const combined=new Map<string,RagSource>();
+ for(let i=0;i<results.length;i++)for(const r of results[i]){
+  const key=r.path+'\u0000'+r.excerpt.slice(0,100);
+  const score=r.score*(i===0?1:0.7);
+  if(score>(combined.get(key)?.score||0))combined.set(key,{...r,score});
+ }
+ const ranked=[...combined.values()].sort((a,b)=>b.score-a.score);
+ const chosen:RagSource[]=[];const paths=new Set<string>();
+ for(const r of ranked){if(chosen.length>=limit)break;if(!paths.has(r.path)){chosen.push(r);paths.add(r.path);}}
+ for(const r of ranked){if(chosen.length>=limit)break;if(!chosen.includes(r))chosen.push(r);}
  return chosen;
 }

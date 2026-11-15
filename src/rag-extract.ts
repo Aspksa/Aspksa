@@ -30,7 +30,7 @@ export async function extractFileText(file:File):Promise<string>{
      const ctx=canvas.getContext('2d');if(ctx){await page.render({canvasContext:ctx,viewport}).promise;text=await ocr(canvas);usedOcr++;}
      canvas.width=0;canvas.height=0;
     }
-    pages.push(text);
+    pages.push('[page '+i+']\n'+text);
     if(pages.join('').length>100000)break;
    }
    return pages.join('\n');

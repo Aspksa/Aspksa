@@ -1,6 +1,6 @@
 import './style.css';
 import { openDocuments, openDiskSource } from './documents';
-import { ragSearch, ragEnsureIndex, ragLinks, ragState } from './rag';
+import { ragMultiSearch, ragEnsureIndex, ragLinks, ragState, ragPlan, ragVersions, ragFacts } from './rag';
 
 type Cluster = { name: string; color: string; count: number; angle: number };
 const clusters: Cluster[] = [
@@ -75,9 +75,11 @@ document.querySelector<HTMLFormElement>('#chat-form')!.addEventListener('submit'
   try {
     const enabled=document.querySelector<HTMLInputElement>('#rag-enabled')!.checked;
     if(enabled)await ragEnsureIndex();
-    const context=enabled?(await ragSearch(value)).map(({path,excerpt})=>({path,excerpt:excerpt.slice(0,1400)})):[];
+    const found=enabled?await ragMultiSearch(value):[];
+    const context=found.map(({path,excerpt})=>({path,excerpt:excerpt.slice(0,1400)}));
+    if(enabled){addMessage('План проверки:\n'+ragPlan(value).map((step,i)=>(i+1)+'. '+step).join('\n'),'ai');const versions=ragVersions().filter(group=>group.versions.some(v=>found.some(r=>r.path===v.path))).slice(0,3);if(versions.length)addMessage('Возможные редакции (по имени файла; дата действия не подтверждена): '+versions.map(g=>g.group+': '+g.versions.map(v=>v.path+' ['+v.date+']').join(', ')).join('; '),'ai');}
     if(enabled&&context.length===0)addMessage('В локальных документах не найдено совпадений. Отправляю вопрос без выдержек.','ai');
-    if(context.length){showRagSources([...new Set(context.map(x=>x.path))]);const note=ragState();addMessage('Найдено фрагментов: '+context.length+'; связей между документами: '+note.links+'. Ответ AI должен опираться на показанные источники; отсутствие сведений не означает отсутствие события.','ai');}
+    if(context.length){showRagSources([...new Set(context.map(x=>x.path))]);const citations=found.map((r,i)=>'['+(i+1)+'] '+r.path+' · '+(r.locator||'позиция не установлена')+' · фактов: '+ragFacts(r.path).length);addMessage('Локальные доказательства:\n'+citations.join('\n'),'ai');const note=ragState();addMessage('Найдено фрагментов: '+context.length+'; связей между документами: '+note.links+'. Ответ AI должен опираться на показанные источники; отсутствие сведений не означает отсутствие события.','ai');}
     const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:pending,context})});
     const data:unknown=await response.json();
     if(!response.ok)throw new Error(typeof data==='object'&&data!==null&&'error' in data?String(data.error):'Ошибка AI-сервера');
