@@ -37,7 +37,7 @@ export function ragDetach(){disk=null;chunks=[];indexed=0;ragInvalidate();lastEr
 export async function ragIndex():Promise<{files:number;chunks:number;skipped:number}>{
  if(!disk)throw Error('Сначала подключи USB в разделе «Диск»');
  const source=disk;const startGeneration=generation;const fresh:Chunk[]=[];const nextDocs:IndexedDocument[]=[];let files=0,skipped=0,total=0;
- let cached=new Map<string,IndexedDocument>();try{cached=new Map((await loadCache()).map(d=>[d.path,d]));cacheStatus='ready';}catch{cacheStatus='unavailable';}
+ let cached=new Map<string,IndexedDocument>();try{cached=new Map((await loadCache(source)).map(d=>[d.path,d]));cacheStatus='ready';}catch{cacheStatus='unavailable';}
  async function walk(dir:FileSystemDirectoryHandle,path:string[],depth:number):Promise<void>{
   if(depth>12||files>=MAX_FILES||total>=MAX_TOTAL_CHARS)return;
   for await(const entry of dir.values()){
@@ -58,7 +58,7 @@ export async function ragIndex():Promise<{files:number;chunks:number;skipped:num
  await walk(source,[],0);
  if(disk!==source||generation!==startGeneration)throw Error('Индекс устарел: файлы изменились во время индексации');
  chunks=fresh;documents=nextDocs;links=linkDocuments(nextDocs);indexed=files;
- if(cacheStatus==='ready')try{await storeCache(nextDocs);}catch{cacheStatus='unavailable';}
+ if(cacheStatus==='ready')try{await storeCache(nextDocs,source);}catch{cacheStatus='unavailable';}
  // Index a bounded number of excerpts locally; if the model cannot download,
  // lexical search remains available without uploading any file content.
  try{
