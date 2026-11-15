@@ -19,6 +19,38 @@ async function directory(){if(!drive)throw Error('USB не подключён');
 async function initialize(){const picker=(window as PickerWindow).showDirectoryPicker;if(!picker)throw Error('Используй Chrome или Edge на компьютере через HTTPS. Этот браузер не поддерживает доступ к USB-папкам.');const disk=await picker({mode:'readwrite'});const project=await disk.getDirectoryHandle('Aspksa',{create:true});drive=await project.getDirectoryHandle('Диск',{create:true});current=[];}
 async function exists(dir:FileSystemDirectoryHandle,name:string){try{await dir.getFileHandle(name);return true;}catch{}try{await dir.getDirectoryHandle(name);return true;}catch{}return false;}
 async function collectZip(dir:FileSystemDirectoryHandle,prefix:string,files:Record<string,Uint8Array>,depth=0){if(depth>20)throw Error('Слишком глубокая структура папок');for await(const entry of dir.values()){const key=prefix+entry.name;if(entry.kind==='directory')await collectZip(await dir.getDirectoryHandle(entry.name),key+'/',files,depth+1);else{const file=await(await dir.getFileHandle(entry.name)).getFile();if(file.size>100_000_000)throw Error('Один файл превышает 100 МБ');files[key]=new Uint8Array(await file.arrayBuffer());if(Object.values(files).reduce((total,item)=>total+item.byteLength,0)>100_000_000)throw Error('Суммарный размер архива превышает 100 МБ');}}}
+
+// ZIP extraction is opt-in and confined to a newly created subfolder.
+async function extractZip(file:File, destination:FileSystemDirectoryHandle){
+ if(file.size>30_000_000)throw Error('ZIP больше 30 МБ: извлеки его на компьютере');
+ const entries=unzipSync(new Uint8Array(await file.arrayBuffer()),{
+  filter:entry=>entry.originalSize<=25_000_000
+ });
+ let total=0;let count=0;
+ const safe:{segments:string[];bytes:Uint8Array}[]=[];
+ for(const [raw,bytes] of Object.entries(entries)){
+  if(raw.endsWith('/'))continue;
+  const segments=raw.split('/');
+  if(segments.length>20||segments.some(x=>!x||x==='.'||x==='..'||x.includes('\\')||x.includes(':')||/[\x00-\x1f]/.test(x)))throw Error('Небезопасный путь внутри ZIP');
+  if(++count>500)throw Error('В ZIP больше 500 файлов');
+  total+=bytes.byteLength;if(total>100_000_000)throw Error('Распакованные файлы превышают 100 МБ');
+  safe.push({segments,bytes});
+ }
+ if(!safe.length)throw Error('ZIP не содержит поддерживаемых файлов');
+ const folderName=clean(file.name.replace(/\.zip$/i,''))+'-распаковано';
+ if(await exists(destination,folderName))throw Error('Папка '+folderName+' уже существует');
+ const folder=await destination.getDirectoryHandle(folderName,{create:true});
+ try{
+  for(const {segments,bytes} of safe){
+   let dir=folder;
+   for(const part of segments.slice(0,-1))dir=await dir.getDirectoryHandle(part,{create:true});
+   const handle=await dir.getFileHandle(segments[segments.length-1],{create:true});
+   const writer=await handle.createWritable();await writer.write(new Uint8Array(bytes));await writer.close();
+  }
+ }catch(e){throw Error('Распаковка прервана. Проверь частично созданную папку «'+folderName+'»: '+String(e));}
+ return folderName;
+}
+
 async function removeTree(dir:FileSystemDirectoryHandle,name:string){await dir.removeEntry(name,{recursive:true});}
 async function renameEntry(dir:FileSystemDirectoryHandle,entry:FileSystemHandle,newName:string){
  if(await exists(dir,newName))throw Error('Файл или папка с таким именем уже существует');
@@ -33,7 +65,7 @@ export function openDocuments(){
  const root=text('section','drive');root.setAttribute('aria-label','USB-документы');
  root.innerHTML='<div class="drive-head"><div class="drive-brand"><span class="drive-brand-icon" aria-hidden="true">◈</span><div><div class="eyebrow">ЛОКАЛЬНОЕ ХРАНИЛИЩЕ</div><h2>ASPKSA Диск</h2><p>Твои файлы. Твой USB-диск.</p></div></div><div class="drive-head-right"><span class="drive-connection">● Не подключён</span><button class="drive-close" aria-label="Закрыть">✕</button></div></div><div class="drive-location-bar"><div class="drive-crumbs"></div><label class="drive-search-wrap"><span aria-hidden="true">⌕</span><input class="drive-search" type="search" placeholder="Поиск файлов и папок" aria-label="Поиск по всем папкам USB"/></label></div><div class="drive-toolbar"><div class="drive-actions"><button class="drive-connect">◉ Подключить USB</button><button class="drive-new drive-primary">＋ Создать папку</button><button class="drive-upload">↑ Загрузить</button><button class="drive-archive">▣ ZIP папки</button><button class="drive-layout" title="Переключить вид" aria-label="Переключить плитки и список">▦ Вид</button></div></div><div class="drive-tools"><span class="drive-status" role="status"></span></div><div class="drive-tabs"><button data-tab="all" class="active">Все файлы</button><button data-tab="favorites">★ Избранное</button><button data-tab="recent">Недавние</button></div><div class="drive-section-heading"><h3>Папки и файлы</h3><span>USB / Aspksa / Диск</span></div><div class="drive-list"></div><input class="drive-input" type="file" multiple hidden />';
  workspace.append(root);
- const preview=async(file:File,handle?:FileSystemFileHandle)=>{
+ const preview=async(file:File,handle?:FileSystemFileHandle,parent?:FileSystemDirectoryHandle)=>{
   const overlay=text('div','drive-preview-overlay');overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Просмотр '+file.name);
   const panel=text('section','drive-preview-panel');const header=text('div','drive-preview-head');const heading=text('strong','',file.name);const close=text('button','drive-preview-close','✕');close.setAttribute('aria-label','Закрыть просмотр');
   const body=text('div','drive-preview-body');const download=text('button','drive-preview-download','↓ Скачать');const saveEdit=text('button','drive-preview-save','Сохранить');let url:string|null=null;
@@ -46,7 +78,7 @@ export function openDocuments(){
   else if(file.type.startsWith('image/')&&/\.(png|jpe?g|webp|gif|svg)$/i.test(file.name)){url=URL.createObjectURL(file);const image=document.createElement('img');image.src=url;image.alt=file.name;image.className='drive-preview-image';body.append(image);}
   else if(file.type.startsWith('video/')||/\.(mp4|webm|ogg)$/i.test(file.name)){url=URL.createObjectURL(file);const video=document.createElement('video');video.src=url;video.controls=true;video.className='drive-preview-media';body.append(video);}
   else if(file.type.startsWith('audio/')||/\.(mp3|wav|flac|m4a|oga)$/i.test(file.name)){url=URL.createObjectURL(file);const audio=document.createElement('audio');audio.src=url;audio.controls=true;audio.className='drive-preview-audio';body.append(audio);}
-  else if(/\.zip$/i.test(file.name)){if(file.size>100_000_000){body.textContent='ZIP больше 100 МБ: скачай его для просмотра.';return;}try{const entries=unzipSync(new Uint8Array(await file.arrayBuffer()));const listing=text('div','drive-zip-list');listing.append(text('h3','','Содержимое ZIP'));for(const name of Object.keys(entries).slice(0,500))listing.append(text('div','',name+' · '+entries[name].length+' байт'));body.append(listing);}catch(e){body.textContent='Не удалось прочитать ZIP: '+String(e);}}
+  else if(/\.zip$/i.test(file.name)){if(file.size>100_000_000){body.textContent='ZIP больше 100 МБ: скачай его для просмотра.';return;}try{const entries=unzipSync(new Uint8Array(await file.arrayBuffer()));const listing=text('div','drive-zip-list');listing.append(text('h3','','Содержимое ZIP'));for(const name of Object.keys(entries).slice(0,500))listing.append(text('div','',name+' · '+entries[name].length+' байт'));body.append(listing);if(parent){const extract=text('button','drive-preview-save','↧ Распаковать в папку');header.insertBefore(extract,download);extract.addEventListener('click',async()=>{if(!confirm('Распаковать ZIP в новую папку рядом с архивом?'))return;extract.setAttribute('disabled','true');try{const name=await extractZip(file,parent);dismiss();status('ZIP распакован в '+name);await refresh();}catch(e){status(String(e));extract.removeAttribute('disabled');}});}}catch(e){body.textContent='Не удалось прочитать ZIP: '+String(e);}}
   else body.append(text('p','drive-preview-unsupported','Предпросмотр этого формата пока недоступен. Можно скачать файл и открыть его на компьютере.'));
  };
  const status=(s:string)=>{root.querySelector<HTMLElement>('.drive-status')!.textContent=s;};
@@ -75,10 +107,10 @@ export function openDocuments(){
     const tile=text('div','drive-item');
     const icon=text('span','drive-icon',entry.kind==='directory'?'📁':/\.(pdf)$/i.test(entry.name)?'📕':/\.(docx?|odt)$/i.test(entry.name)?'📘':/\.(png|jpe?g|webp|gif)$/i.test(entry.name)?'🖼️':'📄');
     const name=text('button','drive-name',entry.name);
-    name.addEventListener('click',async()=>{try{if(entry.kind==='directory'){current=[...path,entry.name];await refresh();}else{save(recentKey,[key,...stored(recentKey).filter(x=>x!==key)]);const handle=await dir.getFileHandle(entry.name);const file=await handle.getFile();await preview(file,handle);}}catch(e){status(String(e));}});
+    name.addEventListener('click',async()=>{try{if(entry.kind==='directory'){current=[...path,entry.name];await refresh();}else{save(recentKey,[key,...stored(recentKey).filter(x=>x!==key)]);const handle=await dir.getFileHandle(entry.name);const file=await handle.getFile();await preview(file,handle,dir);}}catch(e){status(String(e));}});
     const actions=text('div','drive-item-actions');
     const star=text('button','drive-star',favorites.includes(key)?'★ В избранном':'☆ Избранное');star.addEventListener('click',()=>{const list=stored(favoriteKey);save(favoriteKey,list.includes(key)?list.filter(x=>x!==key):[key,...list]);void refresh();});
-    const location=text('span','drive-location',path.length?path.join(' / '):'Документы');
+    const location=text('span','drive-location',path.length?path.join(' / '):'Диск');
     const rename=text('button','','Переименовать');rename.addEventListener('click',async()=>{const proposed=prompt('Новое имя:',entry.name);if(!proposed||clean(proposed)===entry.name)return;const next=clean(proposed);if(!next||next==='.'||next==='..')return;try{await renameEntry(dir,entry,next);for(const storageKey of [favoriteKey,recentKey])save(storageKey,stored(storageKey).map(x=>x===key?itemPath(path,next):x));await refresh();}catch(e){status('Ошибка: '+String(e));}});
     const remove=text('button','drive-delete','Удалить');remove.addEventListener('click',async()=>{if(!confirm('Удалить «'+entry.name+'» и всё содержимое?'))return;try{await removeTree(dir,entry.name);for(const storageKey of [favoriteKey,recentKey])save(storageKey,stored(storageKey).filter(x=>x!==key&&!x.startsWith(key+'/')));await refresh();}catch(e){status(String(e));}});
     actions.append(star,rename,remove);tile.append(icon,name,location,actions);list.append(tile);
