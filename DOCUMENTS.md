@@ -51,3 +51,15 @@ This is an initial rules-based screening, not a verified legal opinion. Risks ma
 ## Contract intelligence v2
 
 Contract analysis now includes eight tabs covering the seven requested areas: clause structure, heuristic subject/action/condition/deadline/consequence extraction, typed clause links (including shared-topic links), expanded risk signals, side-by-side version differences keyed by clause number, relative/absolute deadline candidates, an explicit applicable-law selector, and evidence-oriented questions for AI chat. The **Право** tab intentionally does **not** claim legal compliance: current legislation and dated official primary sources are not connected. It only records the user's chosen jurisdiction for the explanatory warning. The version comparison does not infer whether a change is legally better or worse. Relative deadlines are not converted into calendar reminders without a verified triggering date. Citations include file and clause ID, but no verified PDF page numbers. The clause extractor and obligation/risks are heuristic; validate every conclusion with the source. Questions still require the user to opt into RAG and submit them manually.
+
+## Договоры РФ и стандарты предприятия
+
+В анализе договоров есть вкладка «Предприятие»: загрузка локального JSON-профиля (до 100 правил и 100 КБ), сопоставление обязательных/запрещённых буквальных формулировок с пунктами, показ статуса и источника, удаление профиля. Профиль сохраняется в localStorage текущего браузера, **не** синхронизируется и не отправляется в Cloud.ru автоматически. Пример файла:
+
+```json
+{"name":"Моё предприятие","rules":[{"id":"pay-1","title":"Условия оплаты","required":"в течение 30 календарных дней","forbidden":"предоплата 100%","scope":"Оплата"}]}
+```
+
+`scope` необязателен и ограничивает поиск распознанной категорией пункта. Сопоставление по буквальному вхождению, не по смыслу: перефразирование может быть пропущено, а отсутствие формулировки не доказывает нарушения. Для PDF/DOCX извлечение текста зависит от качества распознавания. Пользователь должен согласовать корпоративные требования и подтвердить актуальность шаблона.
+
+Вкладка «Право» по умолчанию выбирает Россию и показывает предварительную классификацию типов договоров (поставка, купля-продажа, подряд, услуги, аренда, трудовой, заём/кредит, агентский, перевозка, страхование, лицензия, хранение) и перечень тем для проверки по ГК РФ/ТК РФ/специальному законодательству. **Никакие актуальные нормы РФ не загружаются и не проверяются**: соответствие законодательству, обязательность конкретных условий и законность положений автоматически не подтверждаются. Корпоративный стандарт не заменяет закон.
