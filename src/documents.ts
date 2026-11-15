@@ -1,3 +1,4 @@
+import { showContractAnalysis } from './contract-ui';
 import { drawDiskAtlas, type DiskNode } from './drive-atlas';
 import { ragAttach, ragEnsureIndex, ragInvalidate, ragIndexedPaths, ragState, ragStats } from './rag';
 import { zipSync, unzipSync } from 'fflate';
@@ -133,6 +134,11 @@ export function openDocuments(){
   const dismiss=()=>{overlay.remove();if(url)URL.revokeObjectURL(url);document.removeEventListener('keydown',escape);};
   const escape=(event:KeyboardEvent)=>{if(event.key==='Escape')dismiss();};close.addEventListener('click',dismiss);overlay.addEventListener('click',e=>{if(e.target===overlay)dismiss();});document.addEventListener('keydown',escape);
   download.addEventListener('click',()=>{const a=document.createElement('a');const link=URL.createObjectURL(file);a.href=link;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(link),60000);});
+  if(/\.(pdf|docx|txt|md)$/i.test(file.name)){
+   const analyze=text('button','drive-contract-action','⚖ Анализ договора');
+   analyze.addEventListener('click',async()=>{analyze.disabled=true;try{await showContractAnalysis(file,body,question=>{window.dispatchEvent(new CustomEvent('aspksa:contract-question',{detail:{question}}));dismiss();});}finally{analyze.disabled=false;}});
+   header.append(analyze);
+  }
   header.append(heading,download,close);panel.append(header,body);overlay.append(panel);root.append(overlay);close.focus();
   if(/\.(txt|md|markdown|json|csv|log|html|css|js|ts)$/i.test(file.name)){if(file.size>5_000_000){body.textContent='Файл слишком большой для предварительного просмотра (максимум 5 МБ).';return;}const editor=document.createElement('textarea');editor.className='drive-preview-editor';editor.value=await file.text();editor.setAttribute('aria-label','Содержимое файла');body.append(editor);if(handle){header.insertBefore(saveEdit,download);saveEdit.addEventListener('click',async()=>{try{const writer=await handle.createWritable();await writer.write(editor.value);await writer.close();changed();saveEdit.textContent='✓ Сохранено';}catch(e){saveEdit.textContent='Ошибка сохранения';status(String(e));}});}}
   else if(file.type==='application/pdf'||/\.pdf$/i.test(file.name)){url=URL.createObjectURL(file);const frame=document.createElement('iframe');frame.src=url;frame.title='PDF: '+file.name;frame.className='drive-preview-frame';body.append(frame);}

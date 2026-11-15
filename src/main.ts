@@ -63,6 +63,7 @@ function pick(e:PointerEvent){const b=canvas.getBoundingClientRect(),x=e.clientX
 canvas.addEventListener('click',pick);
 function showRagSources(paths:string[]){const list=document.querySelector<HTMLElement>('#messages')!;const wrapper=document.createElement('div');wrapper.className='message ai rag-sources';const heading=document.createElement('strong');heading.textContent='Источники на USB:';wrapper.append(heading);for(const path of paths){const button=document.createElement('button');button.type='button';button.textContent='↗ '+path;button.title='Открыть файл на Диске';button.addEventListener('click',()=>{if(!document.querySelector('.drive'))openDocuments();openDiskSource(path);});wrapper.append(button);}list.append(wrapper);list.scrollTop=list.scrollHeight;}
 function addMessage(text:string,role:'ai'|'user'){const list=document.querySelector<HTMLElement>('#messages')!;const node=document.createElement('div');node.className='message '+role;node.textContent=text;list.append(node);list.scrollTop=list.scrollHeight;}
+window.addEventListener('aspksa:contract-question',event=>{const question=(event as CustomEvent<{question:string}>).detail?.question;if(typeof question!=='string')return;const input=document.querySelector<HTMLInputElement>('#question')!;input.value=question;input.focus();addMessage('Вопрос по договору подготовлен. Проверь включение RAG и отправь его в чат.','ai');});
 document.querySelector<HTMLFormElement>('#chat-form')!.addEventListener('submit',async e=>{
   e.preventDefault();
   if(sending)return;

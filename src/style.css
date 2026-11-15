@@ -188,3 +188,17 @@
 @media(max-width:760px){.drive-atlas-controls{top:auto;bottom:35px;right:10px}.drive-atlas-controls span{display:none}.drive-atlas-heading small{max-width:180px}}
 
 .rag-sources{display:flex;flex-direction:column;align-items:flex-start;gap:7px}.rag-sources strong{font-size:12px;color:#86e9d4}.rag-sources button{max-width:100%;text-align:left;overflow-wrap:anywhere;border:1px solid #32646a;border-radius:8px;padding:7px 10px;background:#10333d;color:#bcefe6;cursor:pointer}.rag-sources button:hover{background:#20565d}
+
+.drive-contract-action,.contract-ask{border:1px solid #398d8b;background:#123e47;color:#c2f6e8;border-radius:9px;padding:8px 12px;cursor:pointer}
+.drive-contract-action:hover,.contract-ask:hover{background:#205b62}
+.contract-analysis{width:100%;max-width:100%;overflow:auto;padding:20px;color:#d8eeee;line-height:1.55}
+.contract-analysis h3{font-size:20px;margin:0 0 12px}
+.contract-muted{font-size:12px;color:#9db6bd}
+.contract-summary{background:#0d2b35;border:1px solid #2b525a;border-radius:12px;padding:10px 16px;margin:15px 0;overflow-wrap:anywhere}
+.contract-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:16px 0}
+.contract-tabs button{border:1px solid #2b5660;background:#102d38;color:#a8cfd1;border-radius:9px;padding:8px 12px;cursor:pointer}
+.contract-tabs button.active{background:#1c6668;color:#fff}
+.contract-content{max-height:55vh;overflow:auto;display:flex;flex-direction:column;gap:9px}
+.contract-clause{padding:12px 14px;background:#0c2933;border:1px solid #254d56;border-radius:10px;overflow-wrap:anywhere;white-space:pre-wrap}
+.contract-clause p{margin:6px 0 0}
+.contract-ask{text-align:left;margin:4px 0}
