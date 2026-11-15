@@ -10,7 +10,7 @@ The USB filesystem requires a user-selected directory and browser permission; au
 
 ## AI chat and local RAG (initial version)
 
-1. Open **Диск**, connect the USB folder, and click **Индексировать для AI**. This scans TXT, MD, Markdown, CSV, JSON and LOG files in **Aspksa/Диск**, excluding the trash. Files over 1 MB are skipped; at most 400 files, 2 million characters, and 12 nested levels are scanned. The index is held only in browser memory and must be rebuilt after page reload or file changes.
+1. Open **Диск**, connect the USB folder, and wait for automatic indexing. This scans TXT, MD, Markdown, CSV, JSON and LOG files in **Aspksa/Диск**, excluding the trash. Files over 1 MB are skipped; at most 400 files, 2 million characters, and 12 nested levels are scanned. The index is held only in browser memory and must be rebuilt after page reload or file changes.
 2. Return to the AI chat and explicitly enable **Использовать документы USB в ответах AI**. The browser retrieves up to four relevant text fragments by lexical keyword overlap and shows their source filenames.
 3. **Privacy:** enabling this option sends the retrieved text excerpts (up to 4 × 1200 characters) with the question to the Cloud.ru AI endpoint via the ASPKSA serverless API. The complete files and the local index are not uploaded. With the option disabled, no file excerpts are sent. This is NOT an offline AI assistant.
 
@@ -26,4 +26,8 @@ The radial map now traverses nested folders (up to 12 levels and 500 entries), d
 
 ## Open AI source files
 
-After a RAG search finds excerpts, the chat displays clickable source file paths. Clicking one opens the Disk UI and previews that exact file, provided the USB directory is still connected. When USB access is absent, the Disk prompts for reconnection. No document is automatically sent to the model by clicking the source. PDF and DOCX extraction is browser-local; only retrieved excerpts are sent to Cloud.ru when the user opts into RAG. PDF text extraction uses pdfjs-dist; scanned PDFs without a text layer are not supported. The RAG index must be rebuilt after edits or reloads.
+After a RAG search finds excerpts, the chat displays clickable source file paths. Clicking one opens the Disk UI and previews that exact file, provided the USB directory is still connected. When USB access is absent, the Disk prompts for reconnection. No document is automatically sent to the model by clicking the source. PDF and DOCX extraction is browser-local; only retrieved excerpts are sent to Cloud.ru when the user opts into RAG. PDF text extraction uses pdfjs-dist; scanned PDFs without a text layer are not supported. The RAG index is rebuilt automatically after supported edits through the Disk UI or reconnecting USB; a page reload requires reconnecting USB.
+
+## Automatic RAG indexing
+
+The manual **Индексировать для AI** button has been removed. Indexing begins automatically after the user grants access to the USB folder and reconnects it in the Disk UI. The UI shows a RAG status indicator. Uploading, saving text, renaming, deleting, restoring or extracting files through ASPKSA invalidates the index and schedules a rebuild. When RAG is enabled in chat, the chat waits for indexing to complete. Indexing stays local; only explicitly enabled retrieved excerpts are sent to Cloud.ru. Changes made by other programs directly on the USB disk are not watched continuously; reconnect to refresh them. Browser permission and the USB disk are still required.
