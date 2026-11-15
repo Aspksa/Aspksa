@@ -15,3 +15,7 @@ The USB filesystem requires a user-selected directory and browser permission; au
 3. **Privacy:** enabling this option sends the retrieved text excerpts (up to 4 × 1200 characters) with the question to the Cloud.ru AI endpoint via the ASPKSA serverless API. The complete files and the local index are not uploaded. With the option disabled, no file excerpts are sent. This is NOT an offline AI assistant.
 
 This is a first-stage keyword-based RAG, not semantic embeddings/vector search. It does not yet index PDF, DOCX, PPTX, XLSX, images or video. It may miss relevant content when the question uses synonyms. Cloud.ru API credentials and a working Vercel deployment are required for AI responses; neither is verified by this change.
+
+## Radial file atlas
+
+The Disk screen now shows a radial orbit of **actual USB entries** (not demo counts). Points are grouped by folder, document, media and archive types; clicking a point opens its folder or file preview. The regular file grid/list and all existing actions remain below. The **Карта файлов** button toggles the orbit. At most 260 visible/search-matched entries are drawn for responsiveness; search and Favorites/Recent tabs control the displayed set. No files are sent anywhere for visualization. The reference image informs the visual style only; it is not used as an app asset.
