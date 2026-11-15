@@ -1,23 +1,9 @@
-# ASPKSA: USB project storage
+# ASPKSA Диск
 
-The **Документы** tab is a local file manager styled after Yandex Disk. It uses the browser File System Access API, not Supabase. Documents are **not** uploaded to GitHub, Vercel or Supabase.
+The main local storage folder is **Aspksa/Диск** inside the USB root selected in Chrome/Edge. The app creates it after explicit browser permission. Existing **Aspksa/Документы** is **not moved, deleted, or migrated automatically**: move old files manually if needed. This prevents accidental data loss.
 
-## First connection
-1. Plug in the external USB SSD/HDD and open ASPKSA in current Chrome or Edge on desktop over HTTPS (or localhost).
-2. Open **Документы** → **Подключить USB**.
-3. In the browser's system folder picker select the **root folder of the USB disk** and grant read/write permission. This one browser permission is mandatory: a website cannot identify or write to an arbitrary USB drive without it.
-4. ASPKSA automatically creates exactly `Aspksa/Документы/` inside the selected USB folder. Additional folders can be created manually inside `Документы/`. Existing folders and files are preserved.
+Upload any file format to the disk. Browser preview is supported for PDF, images, text/Markdown/JSON/CSV, common video and audio formats supported by the browser. Text and Markdown can be edited and saved to the USB file (maximum preview size 5 MB). Office formats DOCX/PPTX/XLSX, ebooks and unsupported codecs can be stored and downloaded but do not yet have native preview/editors.
 
-Supports folders, upload, drag-and-drop, name filtering, grid/list view, downloading/opening files, file and simple folder renaming, recursive delete. **Be careful:** deleting a folder permanently deletes its contents. Renaming folders that contain nested folders is not yet supported. Existing filenames are confirmed before overwrite.
+**ZIP:** Click **ZIP папки** to create an archive of the current folder's contents and save it into that folder. Click a ZIP file to list up to 500 archive entries without extracting them to the USB disk. ZIP listing and creation are performed locally in the browser with fflate. ZIP preview limit: 100 MB. Individual archived files must be at most 100 MB; deep nesting over 20 levels is rejected. Large archives may consume substantial browser memory. Password-protected and unusual ZIP variants may not work. ZIP extraction and selection of individual files for archiving are not yet implemented.
 
-The USB disk must be connected whenever documents are accessed. After page reload, the user may need to grant access again; no silent access to local drives. Safari/Firefox and some mobile browsers do not support the required API. This UI is local storage, not an online sync service. RAG ingestion/indexing of files is a separate feature and is not yet implemented.
-
-Cloud.ru AI chat remains a separate server-side service and does not automatically have access to USB files.
-
-## Search, favorites and recent files
-
-The search box matches filenames recursively under `Aspksa/Документы` (up to 12 nested levels and 500 indexed entries per scan). The **Избранное** and **Недавние** tabs allow quick access across folders. Favorite paths and recent-file paths are stored in this browser's localStorage, not on the USB disk; clearing browser data removes these shortcuts but never deletes documents. Searches use filenames, **not document contents**. Opening a file downloads it using the browser; in-app preview and AI indexing are separate future work.
-
-## In-app previews
-
-Clicking a file now opens an in-app preview dialog with an explicit **Скачать** action. PDF uses the browser's PDF viewer; images (PNG/JPEG/WebP/GIF/SVG) render inline; plain text, Markdown, JSON, CSV and source text display as text up to 5 MB. Word/DOCX and other formats show a download-only fallback. Preview data stays in the browser, using object URLs for local files. Escape or the close button dismisses the preview. The Favorites and Recent tabs now display files from any nested folder when no search is active. Creating a folder and renaming an item refuse existing target names to prevent overwrite.
+The USB filesystem requires a user-selected directory and browser permission; automatic reconnection between sessions is not implemented. The app does not upload files to Cloud.ru or a cloud drive. The filename search, favorites and recent shortcuts remain available, with favorites/recent stored in browser localStorage. Deletion is permanent; no trash/restore yet. Cloud.ru chat is separate and does not read USB files automatically.
