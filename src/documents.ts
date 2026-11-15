@@ -1,3 +1,4 @@
+import { drawDiskAtlas, type DiskNode } from './drive-atlas';
 import { ragAttach, ragIndex } from './rag';
 import { zipSync, unzipSync } from 'fflate';
 // USB file manager. Browser permission is required once per session.
@@ -6,6 +7,8 @@ let drive:FileSystemDirectoryHandle|null=null;
 let current:string[]=[];
 let mode:'grid'|'list'='grid';
 let tab:'all'|'favorites'|'recent'|'trash'='all';
+let atlasVisible=true;
+let atlasCleanup:(()=>void)|null=null;
 const favoriteKey='aspksa-usb-favorites-v1';
 const recentKey='aspksa-usb-recent-v1';
 const stored=(key:string):string[]=>{try{const v=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string'):[];}catch{return [];}};
@@ -115,10 +118,10 @@ async function renameEntry(dir:FileSystemDirectoryHandle,entry:FileSystemHandle,
 export function openDocuments(){
  const workspace=document.querySelector<HTMLElement>('.workspace')!;
  const existing=workspace.querySelector<HTMLElement>('.drive');
- if(existing){existing.remove();workspace.classList.remove('documents-open');return;}
+ if(existing){atlasCleanup?.();atlasCleanup=null;existing.remove();workspace.classList.remove('documents-open');return;}
  workspace.classList.add('documents-open');
  const root=text('section','drive');root.setAttribute('aria-label','USB-документы');
- root.innerHTML='<div class="drive-head"><div class="drive-brand"><span class="drive-brand-icon" aria-hidden="true">◈</span><div><div class="eyebrow">ЛОКАЛЬНОЕ ХРАНИЛИЩЕ</div><h2>ASPKSA Диск</h2><p>Твои файлы. Твой USB-диск.</p></div></div><div class="drive-head-right"><span class="drive-connection">● Не подключён</span><button class="drive-close" aria-label="Закрыть">✕</button></div></div><div class="drive-location-bar"><div class="drive-crumbs"></div><label class="drive-search-wrap"><span aria-hidden="true">⌕</span><input class="drive-search" type="search" placeholder="Поиск файлов и папок" aria-label="Поиск по всем папкам USB"/></label></div><div class="drive-toolbar"><div class="drive-actions"><button class="drive-connect">◉ Подключить USB</button><button class="drive-new drive-primary">＋ Создать папку</button><button class="drive-upload">↑ Загрузить</button><button class="drive-rag">◈ Индексировать для AI</button><button class="drive-archive">▣ ZIP папки</button><button class="drive-layout" title="Переключить вид" aria-label="Переключить плитки и список">▦ Вид</button></div></div><div class="drive-tools"><span class="drive-status" role="status"></span></div><div class="drive-tabs"><button data-tab="all" class="active">Все файлы</button><button data-tab="favorites">★ Избранное</button><button data-tab="recent">Недавние</button><button data-tab="trash">♻ Корзина</button></div><div class="drive-section-heading"><h3>Папки и файлы</h3><span>USB / Aspksa / Диск</span></div><div class="drive-list"></div><input class="drive-input" type="file" multiple hidden />';
+ root.innerHTML='<div class="drive-head"><div class="drive-brand"><span class="drive-brand-icon" aria-hidden="true">◈</span><div><div class="eyebrow">ЛОКАЛЬНОЕ ХРАНИЛИЩЕ</div><h2>ASPKSA Диск</h2><p>Твои файлы. Твой USB-диск.</p></div></div><div class="drive-head-right"><span class="drive-connection">● Не подключён</span><button class="drive-close" aria-label="Закрыть">✕</button></div></div><div class="drive-location-bar"><div class="drive-crumbs"></div><label class="drive-search-wrap"><span aria-hidden="true">⌕</span><input class="drive-search" type="search" placeholder="Поиск файлов и папок" aria-label="Поиск по всем папкам USB"/></label></div><div class="drive-toolbar"><div class="drive-actions"><button class="drive-connect">◉ Подключить USB</button><button class="drive-new drive-primary">＋ Создать папку</button><button class="drive-upload">↑ Загрузить</button><button class="drive-rag">◈ Индексировать для AI</button><button class="drive-archive">▣ ZIP папки</button><button class="drive-atlas-toggle">◎ Карта файлов</button><button class="drive-layout" title="Переключить вид" aria-label="Переключить плитки и список">▦ Вид</button></div></div><div class="drive-tools"><span class="drive-status" role="status"></span></div><div class="drive-tabs"><button data-tab="all" class="active">Все файлы</button><button data-tab="favorites">★ Избранное</button><button data-tab="recent">Недавние</button><button data-tab="trash">♻ Корзина</button></div><div class="drive-atlas-wrap"><div class="drive-atlas-heading"><span>KNOWLEDGE ORBIT / USB</span><strong>Орбита файлов</strong><small>Каждая точка — реальный файл или папка. Нажми для открытия.</small></div><div class="drive-atlas-view"></div></div><div class="drive-section-heading"><h3>Папки и файлы</h3><span>USB / Aspksa / Диск</span></div><div class="drive-list"></div><input class="drive-input" type="file" multiple hidden />';
  workspace.append(root);
  const preview=async(file:File,handle?:FileSystemFileHandle,parent?:FileSystemDirectoryHandle)=>{
   const overlay=text('div','drive-preview-overlay');overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Просмотр '+file.name);
@@ -140,7 +143,8 @@ export function openDocuments(){
  const connection=()=>{const label=root.querySelector<HTMLElement>('.drive-connection')!;label.textContent=drive?'● USB подключён':'● Не подключён';label.classList.toggle('connected',!!drive);};
  const refresh=async()=>{
   const list=root.querySelector<HTMLElement>('.drive-list')!,crumbs=root.querySelector<HTMLElement>('.drive-crumbs')!;
-  list.replaceChildren();crumbs.replaceChildren();connection();
+  atlasCleanup?.();atlasCleanup=null;list.replaceChildren();crumbs.replaceChildren();connection();
+  const atlasWrap=root.querySelector<HTMLElement>('.drive-atlas-wrap')!;atlasWrap.hidden=!atlasVisible||tab==='trash';
   if(!drive){status('Подключи USB-диск — папка Aspksa/Диск создастся автоматически.');list.append(text('div','drive-empty','◈  Подключи USB-диск, чтобы увидеть свои папки и файлы.'));return;}
   const home=text('button','','⌂  Aspksa / Диск');home.addEventListener('click',()=>{current=[];void refresh();});crumbs.append(home);
   current.forEach((part,i)=>{crumbs.append(text('span','',' / '));const b=text('button','',part);b.addEventListener('click',()=>{current=current.slice(0,i+1);void refresh();});crumbs.append(b);});
@@ -166,6 +170,7 @@ export function openDocuments(){
     if(tab==='recent'&&!recent.includes(key))return false;
     return q?entry.name.toLocaleLowerCase('ru').includes(q):tab==='all'?path.join('/')===current.join('/'):true;
    });
+   if(atlasVisible){const nodes:DiskNode[]=entries.slice(0,260).map(({entry,path})=>({name:entry.name,kind:entry.kind,path}));atlasCleanup=drawDiskAtlas(root.querySelector<HTMLElement>('.drive-atlas-view')!,nodes,async node=>{try{const dir=await at(node.path);if(node.kind==='directory'){current=[...node.path,node.name];await refresh();}else{const handle=await dir.getFileHandle(node.name);const file=await handle.getFile();await preview(file,handle,dir);}}catch(e){status(String(e));}});}
    entries.sort((a,b)=>tab==='recent'?recent.indexOf(itemPath(a.path,a.entry.name))-recent.indexOf(itemPath(b.path,b.entry.name)):(a.entry.kind===b.entry.kind?a.entry.name.localeCompare(b.entry.name,'ru'):a.entry.kind==='directory'?-1:1));
    list.className='drive-list '+(mode==='grid'?'drive-grid':'drive-rows');
    for(const {entry,path} of entries){
@@ -185,10 +190,11 @@ export function openDocuments(){
    status(entries.length+' элементов · '+(q?'Поиск по папкам':'Локальные файлы на USB'));
   }catch(e){status('Ошибка чтения: '+String(e));}
  };
- root.querySelector('.drive-close')!.addEventListener('click',()=>{root.remove();workspace.classList.remove('documents-open');});
+ root.querySelector('.drive-close')!.addEventListener('click',()=>{atlasCleanup?.();atlasCleanup=null;root.remove();workspace.classList.remove('documents-open');});
  root.querySelector('.drive-connect')!.addEventListener('click',async()=>{try{await initialize();await refresh();}catch(e){status('Подключение отменено или недоступно: '+String(e));}});
  root.querySelector('.drive-rag')!.addEventListener('click',async()=>{if(!drive){status('Сначала подключи USB');return;}const button=root.querySelector<HTMLButtonElement>('.drive-rag')!;button.disabled=true;status('Индексация текстовых файлов на этом устройстве...');try{const result=await ragIndex();status('RAG готов: '+result.files+' файлов, '+result.chunks+' фрагментов. Пропущено: '+result.skipped);}catch(e){status('Ошибка RAG: '+String(e));}finally{button.disabled=false;}});
  root.querySelector('.drive-archive')!.addEventListener('click',async()=>{if(!drive){status('Сначала подключи USB');return;}try{const dir=await directory();const files:Record<string,Uint8Array>={};await collectZip(dir,'',files);if(!Object.keys(files).length){status('Папка пуста');return;}const zip=zipSync(files,{level:1});const name='Архив-'+new Date().toISOString().slice(0,10)+'.zip';if(await exists(dir,name)&&!confirm('Заменить '+name+'?'))return;const target=await dir.getFileHandle(name,{create:true});const writer=await target.createWritable();await writer.write(new Uint8Array(zip));await writer.close();await refresh();}catch(e){status('Ошибка создания ZIP: '+String(e));}});
+ root.querySelector('.drive-atlas-toggle')!.addEventListener('click',()=>{atlasVisible=!atlasVisible;void refresh();});
  root.querySelector('.drive-layout')!.addEventListener('click',()=>{mode=mode==='grid'?'list':'grid';root.querySelector<HTMLElement>('.drive-layout')!.textContent=mode==='grid'?'▦ Вид':'☷ Вид';void refresh();});
  root.querySelector('.drive-search')!.addEventListener('input',()=>void refresh());
  root.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button=>button.addEventListener('click',()=>{tab=button.dataset.tab as typeof tab;root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));void refresh();}));
