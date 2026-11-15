@@ -1,4 +1,4 @@
-import { zipSync, unzipSync, strFromU8 } from 'fflate';
+import { zipSync, unzipSync } from 'fflate';
 // USB file manager. Browser permission is required once per session.
 type PickerWindow = Window & { showDirectoryPicker?: (options?: {mode?:'readwrite'})=>Promise<FileSystemDirectoryHandle> };
 let drive:FileSystemDirectoryHandle|null=null;
@@ -18,7 +18,7 @@ const clean=(name:string)=>name.trim().replace(/[\\/\x00-\x1f]/g,'_').slice(0,12
 async function directory(){if(!drive)throw Error('USB не подключён');let dir=drive;for(const name of current)dir=await dir.getDirectoryHandle(name);return dir;}
 async function initialize(){const picker=(window as PickerWindow).showDirectoryPicker;if(!picker)throw Error('Используй Chrome или Edge на компьютере через HTTPS. Этот браузер не поддерживает доступ к USB-папкам.');const disk=await picker({mode:'readwrite'});const project=await disk.getDirectoryHandle('Aspksa',{create:true});drive=await project.getDirectoryHandle('Диск',{create:true});current=[];}
 async function exists(dir:FileSystemDirectoryHandle,name:string){try{await dir.getFileHandle(name);return true;}catch{}try{await dir.getDirectoryHandle(name);return true;}catch{}return false;}
-async function collectZip(dir:FileSystemDirectoryHandle,prefix:string,files:Record<string,Uint8Array>,depth=0){if(depth>20)throw Error('Слишком глубокая структура папок');for await(const entry of dir.values()){const key=prefix+entry.name;if(entry.kind==='directory')await collectZip(await dir.getDirectoryHandle(entry.name),key+'/',files,depth+1);else{const file=await(await dir.getFileHandle(entry.name)).getFile();if(file.size>100_000_000)throw Error('Один файл превышает 100 МБ');files[key]=new Uint8Array(await file.arrayBuffer());}}}
+async function collectZip(dir:FileSystemDirectoryHandle,prefix:string,files:Record<string,Uint8Array>,depth=0){if(depth>20)throw Error('Слишком глубокая структура папок');for await(const entry of dir.values()){const key=prefix+entry.name;if(entry.kind==='directory')await collectZip(await dir.getDirectoryHandle(entry.name),key+'/',files,depth+1);else{const file=await(await dir.getFileHandle(entry.name)).getFile();if(file.size>100_000_000)throw Error('Один файл превышает 100 МБ');files[key]=new Uint8Array(await file.arrayBuffer());if(Object.values(files).reduce((total,item)=>total+item.byteLength,0)>100_000_000)throw Error('Суммарный размер архива превышает 100 МБ');}}}
 async function removeTree(dir:FileSystemDirectoryHandle,name:string){await dir.removeEntry(name,{recursive:true});}
 async function renameEntry(dir:FileSystemDirectoryHandle,entry:FileSystemHandle,newName:string){
  if(await exists(dir,newName))throw Error('Файл или папка с таким именем уже существует');
