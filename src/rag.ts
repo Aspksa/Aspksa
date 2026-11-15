@@ -12,7 +12,7 @@ async function extractText(file:File):Promise<string>{
   try{const pages:string[]=[];for(let i=1;i<=Math.min(pdf.numPages,80);i++){const page=await pdf.getPage(i);const content=await page.getTextContent();pages.push(content.items.map(item=>'str' in item?String(item.str):'').join(' '));if(pages.join('').length>100000)break;}return pages.join('\n');}finally{await pdf.destroy();}
  }
  if(/\.docx$/i.test(file.name)){
-  const archive=unzipSync(new Uint8Array(await file.arrayBuffer()),{filter:entry=>entry.name==='word/document.xml'});
+  const archive=unzipSync(new Uint8Array(await file.arrayBuffer()),{filter:entry=>entry.name==='word/document.xml'&&entry.originalSize<=10_000_000});
   const xml=archive['word/document.xml'];if(!xml)throw Error('DOCX не содержит document.xml');
   const doc=new DOMParser().parseFromString(strFromU8(xml),'application/xml');
   if(doc.querySelector('parsererror'))throw Error('Ошибка XML в DOCX');
