@@ -5,7 +5,7 @@ const MAX_FILES=400,MAX_FILE_BYTES=1_000_000,MAX_TOTAL_CHARS=2_000_000;
 type Chunk={path:string;text:string;terms:Set<string>};
 let chunks:Chunk[]=[];
 let indexed=0;
-const tokens=(s:string)=>s.toLocaleLowerCase('ru').match(/[\\p{L}\\p{N}]{3,}/gu)||[];
+const tokens=(s:string)=>s.toLocaleLowerCase('ru').match(/[\p{L}\p{N}]{3,}/gu)||[];
 export function ragConnected(){return disk!==null;}
 export function ragStats(){return {files:indexed,chunks:chunks.length};}
 export function ragAttach(dir:FileSystemDirectoryHandle){disk=dir;chunks=[];indexed=0;}
@@ -18,7 +18,7 @@ export async function ragIndex():Promise<{files:number;chunks:number;skipped:num
   for await(const entry of dir.values()){
    if(path.length===0&&entry.name==='.aspksa-trash')continue;
    if(entry.kind==='directory'){await walk(await dir.getDirectoryHandle(entry.name),[...path,entry.name],depth+1);continue;}
-   if(!/\\.(txt|md|markdown|csv|json|log)$/i.test(entry.name)){skipped++;continue;}
+   if(!/\.(txt|md|markdown|csv|json|log)$/i.test(entry.name)){skipped++;continue;}
    const file=await(await dir.getFileHandle(entry.name)).getFile();
    if(file.size>MAX_FILE_BYTES){skipped++;continue;}
    const raw=await file.text();files++;
