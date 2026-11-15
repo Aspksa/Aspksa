@@ -220,3 +220,12 @@
 .legal-actions button.active{background:#116267;border-color:#52c9bc}
 .legal-hint{font-size:10px;color:#86a9b0;line-height:1.5;margin:12px 0 0}
 @media(max-width:760px){.legal-dashboard{top:76px;left:12px;width:calc(100% - 24px);max-height:245px;padding:10px}.legal-dashboard-title{font-size:12px}.legal-agent{min-height:45px;padding:7px}.legal-agent small{font-size:9px}.legal-actions button{padding:6px;font-size:10px}}
+
+/* Reviewable shared experience for the four legal agents */
+.legal-memory-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:10px;color:#a7d2d3}
+.legal-memory-controls button,.legal-lesson button{border:1px solid #28545b;background:#10323b;color:#ccebea;border-radius:7px;padding:6px;font-size:10px}
+.legal-memory-list{margin-top:8px;max-height:220px;overflow:auto;border-top:1px solid #28545b}
+.legal-memory-list[hidden]{display:none}
+.legal-lesson{padding:9px 2px;border-bottom:1px solid #29434d;font-size:11px}
+.legal-lesson strong{display:block;color:#cde8e9}.legal-lesson p{margin:5px 0;color:#8eb4bb;white-space:pre-wrap}
+.legal-lesson input{background:#0b2530;color:#def6f4;border:1px solid #28545b;border-radius:5px;max-width:100%;padding:6px;font-size:11px}
