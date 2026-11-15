@@ -177,3 +177,12 @@
 .drive-atlas-legend{position:absolute;bottom:20px;left:24px;z-index:2;color:#7baab4;font:10px ui-monospace,monospace;white-space:pre-wrap;pointer-events:none}
 .drive-atlas-toggle{border-color:#398780!important;color:#81e4d3!important}
 @media(max-width:760px){.drive-atlas-wrap{min-height:350px;border-radius:16px}.drive-atlas-view{height:350px}.drive-atlas-heading{left:14px;top:13px}.drive-atlas-heading strong{font-size:16px}.drive-atlas-heading small{max-width:220px}.drive-atlas-legend{left:12px;bottom:12px;font-size:9px}}
+
+/* Interactive orbit navigation */
+.drive-atlas-controls{position:absolute;right:18px;top:18px;z-index:4;display:flex;align-items:center;gap:6px;background:#061b28d9;border:1px solid #2b5560;border-radius:12px;padding:6px;backdrop-filter:blur(8px)}
+.drive-atlas-controls button{min-width:32px;height:32px;border:1px solid #285660;border-radius:8px;background:#113542;color:#d4f7f2;font-size:18px}
+.drive-atlas-controls button:hover{background:#20606a}
+.drive-atlas-controls span{font:11px ui-monospace,monospace;color:#8db9bc;margin:0 6px}
+.drive-atlas-canvas{cursor:grab}
+.drive-atlas-canvas:active{cursor:grabbing}
+@media(max-width:760px){.drive-atlas-controls{top:auto;bottom:35px;right:10px}.drive-atlas-controls span{display:none}.drive-atlas-heading small{max-width:180px}}
