@@ -97,3 +97,22 @@ export async function ragSearch(question:string,limit=4):Promise<RagSource[]>{
  if(chosen.length<limit){const seen=new Set(chosen.map(c=>c.path));for(const item of initial){if(chosen.length>=limit)break;if(seen.has(item.path))continue;chosen.push({...item,locator:evidenceLocator(documents.find(d=>d.path===item.path)?.text||'',item.excerpt)});seen.add(item.path);}}
  return chosen;
 }
+
+export async function ragMultiSearch(question:string,limit=4):Promise<RagSource[]>{
+ const q=question.toLocaleLowerCase('ru');
+ const queries=[question];
+ if(/договор|контракт|постав|исполн|обязательств/i.test(q))queries.push(question+' приложение спецификация акт');
+ if(/оплат|долг|сч[её]т|плат[её]ж|исполн/i.test(q))queries.push(question+' счёт оплата платежный документ');
+ const results=await Promise.all(queries.slice(0,3).map(query=>ragSearch(query,Math.max(limit*3,8))));
+ const combined=new Map<string,RagSource>();
+ for(let i=0;i<results.length;i++)for(const r of results[i]){
+  const key=r.path+'\u0000'+r.excerpt.slice(0,100);
+  const score=r.score*(i===0?1:0.7);
+  if(score>(combined.get(key)?.score||0))combined.set(key,{...r,score});
+ }
+ const ranked=[...combined.values()].sort((a,b)=>b.score-a.score);
+ const chosen:RagSource[]=[];const paths=new Set<string>();
+ for(const r of ranked){if(chosen.length>=limit)break;if(!paths.has(r.path)){chosen.push(r);paths.add(r.path);}}
+ for(const r of ranked){if(chosen.length>=limit)break;if(!chosen.includes(r))chosen.push(r);}
+ return chosen;
+}
