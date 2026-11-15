@@ -1,5 +1,5 @@
 export type IndexedDocument={path:string;size:number;modified:number;text:string;version:string;kind:string;references:string[];identifiers:string[]};
-const DB='aspksa-rag-cache-v1',STORE='documents';
+const DB='aspksa-rag-cache-v2',STORE='documents';
 let database:Promise<IDBDatabase>|null=null;
 function openDb():Promise<IDBDatabase>{
  if(!database)database=new Promise((resolve,reject)=>{const request=indexedDB.open(DB,1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(STORE))request.result.createObjectStore(STORE,{keyPath:'path'});};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);}).catch(e=>{database=null;throw e;});
