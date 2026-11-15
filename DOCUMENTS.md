@@ -13,3 +13,7 @@ Supports folders, upload, drag-and-drop, name filtering, grid/list view, downloa
 The USB disk must be connected whenever documents are accessed. After page reload, the user may need to grant access again; no silent access to local drives. Safari/Firefox and some mobile browsers do not support the required API. This UI is local storage, not an online sync service. RAG ingestion/indexing of files is a separate feature and is not yet implemented.
 
 Cloud.ru AI chat remains a separate server-side service and does not automatically have access to USB files.
+
+## Search, favorites and recent files
+
+The search box matches filenames recursively under `Aspksa/Документы` (up to 12 nested levels and 500 indexed entries per scan). The **Избранное** and **Недавние** tabs allow quick access across folders. Favorite paths and recent-file paths are stored in this browser's localStorage, not on the USB disk; clearing browser data removes these shortcuts but never deletes documents. Searches use filenames, **not document contents**. Opening a file downloads it using the browser; in-app preview and AI indexing are separate future work.
