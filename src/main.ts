@@ -1,5 +1,5 @@
 import './style.css';
-import { openDocuments } from './documents';
+import { openDocuments, openDiskSource } from './documents';
 import { ragSearch, ragStats } from './rag';
 
 type Cluster = { name: string; color: string; count: number; angle: number };
@@ -61,6 +61,7 @@ function render(){
 }requestAnimationFrame(render);
 function pick(e:PointerEvent){const b=canvas.getBoundingClientRect(),x=e.clientX-b.left-width*.5,y=e.clientY-b.top-height*.51,angle=(Math.atan2(y,x)*180/Math.PI+360)%360;const radius=Math.hypot(x,y),r=Math.min(width*.46,height*.46)*scale;if(radius<r*.25||radius>r*1.08)return;let best=0,distance=Infinity;clusters.forEach((c,i)=>{const delta=Math.abs(((angle-c.angle+540)%360)-180);if(delta<distance){distance=delta;best=i;}});active=best;const c=clusters[best];document.querySelector('#selected')!.textContent=`${c.name} · ${c.count.toLocaleString('ru-RU')} элементов`;addMessage(`Выбран кластер «${c.name}». В демо отображается структура без реальных данных RAG.`,'ai');}
 canvas.addEventListener('click',pick);
+function showRagSources(paths:string[]){const list=document.querySelector<HTMLElement>('#messages')!;const wrapper=document.createElement('div');wrapper.className='message ai rag-sources';const heading=document.createElement('strong');heading.textContent='Источники на USB:';wrapper.append(heading);for(const path of paths){const button=document.createElement('button');button.type='button';button.textContent='↗ '+path;button.title='Открыть файл на Диске';button.addEventListener('click',()=>{if(!document.querySelector('.drive'))openDocuments();openDiskSource(path);});wrapper.append(button);}list.append(wrapper);list.scrollTop=list.scrollHeight;}
 function addMessage(text:string,role:'ai'|'user'){const list=document.querySelector<HTMLElement>('#messages')!;const node=document.createElement('div');node.className='message '+role;node.textContent=text;list.append(node);list.scrollTop=list.scrollHeight;}
 document.querySelector<HTMLFormElement>('#chat-form')!.addEventListener('submit',async e=>{
   e.preventDefault();
@@ -76,7 +77,7 @@ document.querySelector<HTMLFormElement>('#chat-form')!.addEventListener('submit'
     if(enabled&&stats.chunks===0)throw new Error('RAG ещё не проиндексирован. Открой Диск, подключи USB и нажми «Индексировать для AI»');
     const context=enabled?ragSearch(value).map(({path,excerpt})=>({path,excerpt:excerpt.slice(0,1400)})):[];
     if(enabled&&context.length===0)addMessage('В локальных документах не найдено совпадений. Отправляю вопрос без выдержек.','ai');
-    if(context.length)addMessage('Источники RAG: '+[...new Set(context.map(x=>x.path))].join(', '),'ai');
+    if(context.length)showRagSources([...new Set(context.map(x=>x.path))]);
     const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:pending,context})});
     const data:unknown=await response.json();
     if(!response.ok)throw new Error(typeof data==='object'&&data!==null&&'error' in data?String(data.error):'Ошибка AI-сервера');
