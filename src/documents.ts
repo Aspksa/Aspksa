@@ -38,7 +38,7 @@ export function openDocuments(){
   current.forEach((part,i)=>{crumbs.append(text('span','',' / '));const b=text('button','',part);b.addEventListener('click',()=>{current=current.slice(0,i+1);void refresh();});crumbs.append(b);});
   try{
    const q=root.querySelector<HTMLInputElement>('.drive-search')!.value.trim().toLocaleLowerCase('ru');
-   const all=await searchAll(q);
+   const all=(q||tab!=='all')?await searchAll(q):await (async()=>{const entries:{entry:FileSystemHandle;path:string[]}[]=[];const dir=await directory();for await(const entry of dir.values())entries.push({entry,path:[...current]});return entries;})();
    const favorites=stored(favoriteKey),recent=stored(recentKey);
    const entries=all.filter(({entry,path})=>{
     const key=itemPath(path,entry.name);
