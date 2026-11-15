@@ -88,7 +88,7 @@ async function trashItems(){
    const item=await root.getDirectoryHandle(entry.name);
    const file=await(await item.getFileHandle('metadata.json')).getFile();
    const meta=JSON.parse(await file.text()) as TrashMeta;
-   if(!meta||typeof meta.name!=='string'||!Array.isArray(meta.path)||!['file','directory'].includes(meta.kind))continue;
+   if(!meta||typeof meta.name!=='string'||!Array.isArray(meta.path)||!meta.path.every(x=>typeof x==='string')||typeof meta.deletedAt!=='string'||!['file','directory'].includes(meta.kind))continue;
    items.push({id:entry.name,meta});
   }catch{continue;}
  }
@@ -96,7 +96,7 @@ async function trashItems(){
 }
 async function restoreTrash(id:string,meta:TrashMeta){
  if(!drive)throw Error('USB не подключён');
- if(!meta.name||meta.name==='.'||meta.name==='..'||meta.name.includes('/')||meta.name.includes('\\')||meta.path.some(x=>!x||x==='.'||x==='..'||x.includes('/')||x.includes('\\')))throw Error('Небезопасный путь восстановления');
+ if(!meta.name||meta.name===trashFolder||meta.path.includes(trashFolder)||meta.name==='.'||meta.name==='..'||meta.name.includes('/')||meta.name.includes('\\')||meta.path.some(x=>!x||x==='.'||x==='..'||x.includes('/')||x.includes('\\')))throw Error('Небезопасный путь восстановления');
  let target=drive;
  for(const part of meta.path)target=await target.getDirectoryHandle(part,{create:true});
  if(await exists(target,meta.name))throw Error('Файл или папка с таким именем уже существует');
@@ -151,7 +151,7 @@ export function openDocuments(){
     for(const {id,meta} of items.filter(x=>x.meta.name.toLocaleLowerCase('ru').includes(q))){
      const tile=text('div','drive-item');const icon=text('span','drive-icon',meta.kind==='directory'?'📁':'📄');const name=text('span','drive-name',meta.name);const location=text('span','drive-location',(meta.path.join('/')||'Диск')+' · '+new Date(meta.deletedAt).toLocaleString('ru'));
      const actions=text('div','drive-item-actions');const restore=text('button','drive-restore','↶ Восстановить');restore.addEventListener('click',async()=>{try{await restoreTrash(id,meta);await refresh();}catch(e){status('Ошибка восстановления: '+String(e));}});
-     const erase=text('button','drive-delete','Удалить навсегда');erase.addEventListener('click',async()=>{if(!confirm('Безвозвратно удалить «'+meta.name+'»?'))return;try{(await trashRoot()).removeEntry(id,{recursive:true}).then(()=>refresh()).catch(e=>status(String(e)));}catch(e){status(String(e));}});
+     const erase=text('button','drive-delete','Удалить навсегда');erase.addEventListener('click',async()=>{if(!confirm('Безвозвратно удалить «'+meta.name+'»?'))return;try{await(await trashRoot()).removeEntry(id,{recursive:true});await refresh();}catch(e){status(String(e));}});
      actions.append(restore,erase);tile.append(icon,name,location,actions);list.append(tile);
     }
     status(items.length+' элементов в корзине');return;
