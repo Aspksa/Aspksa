@@ -1,5 +1,6 @@
 import './style.css';
 import { openDocuments } from './documents';
+import { ragSearch, ragStats } from './rag';
 
 type Cluster = { name: string; color: string; count: number; angle: number };
 const clusters: Cluster[] = [
@@ -23,7 +24,7 @@ app.innerHTML=`
 <main class="workspace">
 <aside class="sidebar"><h3>База знаний</h3><button class="navitem selected">◈ &nbsp; Все знания <span>22 094</span></button><button class="navitem">▤ &nbsp; Документы <span>8 432</span></button><button class="navitem">◇ &nbsp; Заметки <span>5 768</span></button><button class="navitem">⌘ &nbsp; Проекты <span>1 294</span></button><h3>Коллекции</h3><div class="legend"><span style="--c:#eeb06b">● Работа</span><span style="--c:#40dfc9">● Исследования</span><span style="--c:#80a8ff">● Обучение</span><span style="--c:#a782f9">● Идеи</span></div><h3>Быстрые действия</h3><button class="action" id="upload">＋ Загрузить документы</button><button class="action" id="reset">↺ Сбросить выделение</button><div class="sync"><b>●</b> Демо-режим · без подключения к RAG</div></aside>
 <section class="atlas" aria-label="Интерактивная карта знаний"><canvas id="graph"></canvas><div class="graph-overlay"><div class="eyebrow">KNOWLEDGE ATLAS / INTERACTIVE</div><div id="selected">Нажмите на сектор, чтобы изучить связи</div></div><div class="atlas-controls"><button id="pause" title="Остановить анимацию">Ⅱ</button><button id="zoomout" title="Уменьшить">−</button><span id="zoomlabel">100%</span><button id="zoomin" title="Увеличить">＋</button></div></section>
-<section class="assistant" aria-label="AI-чат"><div class="assistant-heading"><span class="ai-logo">◉</span><div><h2>AI Ассистент</h2><p>RAG · Поиск · Анализ · Связи</p></div></div><div class="messages" id="messages"><div class="message ai">Привет! Я ASPKSA. Задай вопрос — я отвечу через Cloud.ru, когда сервер будет настроен.</div></div><form id="chat-form" class="composer"><input id="question" autocomplete="off" aria-label="Сообщение" placeholder="Спросить о знаниях..." required/><button aria-label="Отправить" type="submit">➤</button></form><p class="disclaimer">AI: Cloud.ru Foundation Models · RAG-поиск будет подключён отдельно.</p></section>
+<section class="assistant" aria-label="AI-чат"><div class="assistant-heading"><span class="ai-logo">◉</span><div><h2>AI Ассистент</h2><p>RAG · Поиск · Анализ · Связи</p></div></div><div class="messages" id="messages"><div class="message ai">Привет! Я ASPKSA. Задай вопрос — я отвечу через Cloud.ru, когда сервер будет настроен.</div></div><label class="rag-toggle"><input id="rag-enabled" type="checkbox"/> Использовать документы USB в ответах AI</label><form id="chat-form" class="composer"><input id="question" autocomplete="off" aria-label="Сообщение" placeholder="Спросить о знаниях..." required/><button aria-label="Отправить" type="submit">➤</button></form><p class="disclaimer">RAG: поиск выполняется локально; только найденные выдержки отправляются в Cloud.ru при включённой опции.</p></section>
 </main><input id="file" type="file" hidden multiple accept=".pdf,.txt,.md,.json"/>`;
 const canvas=document.querySelector<HTMLCanvasElement>('#graph')!;
 const ctx=canvas.getContext('2d')!;
@@ -70,14 +71,20 @@ document.querySelector<HTMLFormElement>('#chat-form')!.addEventListener('submit'
   const pending=[...history,{role:'user' as const,content:value}];
   sending=true;input.disabled=true;
   try {
-    const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:pending})});
+    const enabled=document.querySelector<HTMLInputElement>('#rag-enabled')!.checked;
+    const stats=ragStats();
+    if(enabled&&stats.chunks===0)throw new Error('RAG ещё не проиндексирован. Открой Диск, подключи USB и нажми «Индексировать для AI»');
+    const context=enabled?ragSearch(value).map(({path,excerpt})=>({path,excerpt:excerpt.slice(0,1400)})):[];
+    if(enabled&&context.length===0)addMessage('В локальных документах не найдено совпадений. Отправляю вопрос без выдержек.','ai');
+    if(context.length)addMessage('Источники RAG: '+[...new Set(context.map(x=>x.path))].join(', '),'ai');
+    const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:pending,context})});
     const data:unknown=await response.json();
     if(!response.ok)throw new Error(typeof data==='object'&&data!==null&&'error' in data?String(data.error):'Ошибка AI-сервера');
     if(typeof data!=='object'||data===null||!('reply' in data)||typeof data.reply!=='string')throw new Error('Некорректный ответ сервера');
     addMessage(data.reply,'ai');
     history.push({role:'user',content:value},{role:'assistant',content:data.reply});
     if(history.length>20)history.splice(0,history.length-20);
-  }catch(error){addMessage('Cloud.ru недоступен: '+(error instanceof Error?error.message:'неизвестная ошибка')+'. Проверьте настройки серверного API.','ai');}
+  }catch(error){addMessage('Не удалось ответить: '+(error instanceof Error?error.message:'неизвестная ошибка')+'. Проверьте настройки серверного API.','ai');}
   finally{sending=false;input.disabled=false;input.focus();}
 });
 document.querySelector('#pause')!.addEventListener('click',()=>{playing=!playing;document.querySelector('#pause')!.textContent=playing?'Ⅱ':'▶';});
