@@ -5,11 +5,14 @@ function openDb():Promise<IDBDatabase>{
  if(!database)database=new Promise((resolve,reject)=>{const request=indexedDB.open(DB,1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(STORE))request.result.createObjectStore(STORE,{keyPath:'path'});};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);}).catch(e=>{database=null;throw e;});
  return database;
 }
-export async function loadCache():Promise<IndexedDocument[]>{
- const db=await openDb();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly');const request=tx.objectStore(STORE).getAll();request.onsuccess=()=>resolve(request.result as IndexedDocument[]);request.onerror=()=>reject(request.error);});
+export async function loadCache(root:FileSystemDirectoryHandle):Promise<IndexedDocument[]>{
+ const db=await openDb();const items=await new Promise<Array<IndexedDocument|{path:string;handle:FileSystemDirectoryHandle}>>((resolve,reject)=>{const tx=db.transaction(STORE,'readonly');const request=tx.objectStore(STORE).getAll();request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+ const marker=items.find(item=>item.path==='__aspksa_cache_root__') as {path:string;handle?:FileSystemDirectoryHandle}|undefined;
+ if(!marker?.handle||!(await root.isSameEntry(marker.handle)))return [];
+ return items.filter(item=>item.path!=='__aspksa_cache_root__') as IndexedDocument[];
 }
-export async function storeCache(items:IndexedDocument[]):Promise<void>{
- const db=await openDb();await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');const store=tx.objectStore(STORE);store.clear();for(const item of items)store.put(item);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
+export async function storeCache(items:IndexedDocument[],root:FileSystemDirectoryHandle):Promise<void>{
+ const db=await openDb();await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');const store=tx.objectStore(STORE);store.clear();store.put({path:'__aspksa_cache_root__',handle:root});for(const item of items)store.put(item);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
 }
 export function extractIdentifiers(text:string):string[]{
  const values=[...text.matchAll(/(?:договор|контракт|сч[её]т|акт|спецификация|приложение)\s*(?:№|N|номер)?\s*([А-ЯA-Z0-9][А-ЯA-Z0-9\-/]{2,35})/gi)].map(m=>m[1].toLocaleLowerCase('ru'));
