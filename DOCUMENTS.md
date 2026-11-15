@@ -17,3 +17,7 @@ Cloud.ru AI chat remains a separate server-side service and does not automatical
 ## Search, favorites and recent files
 
 The search box matches filenames recursively under `Aspksa/Документы` (up to 12 nested levels and 500 indexed entries per scan). The **Избранное** and **Недавние** tabs allow quick access across folders. Favorite paths and recent-file paths are stored in this browser's localStorage, not on the USB disk; clearing browser data removes these shortcuts but never deletes documents. Searches use filenames, **not document contents**. Opening a file downloads it using the browser; in-app preview and AI indexing are separate future work.
+
+## In-app previews
+
+Clicking a file now opens an in-app preview dialog with an explicit **Скачать** action. PDF uses the browser's PDF viewer; images (PNG/JPEG/WebP/GIF/SVG) render inline; plain text, Markdown, JSON, CSV and source text display as text up to 5 MB. Word/DOCX and other formats show a download-only fallback. Preview data stays in the browser, using object URLs for local files. Escape or the close button dismisses the preview. The Favorites and Recent tabs now display files from any nested folder when no search is active. Creating a folder and renaming an item refuse existing target names to prevent overwrite.
