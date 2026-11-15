@@ -19,3 +19,7 @@ This is a first-stage keyword-based RAG, not semantic embeddings/vector search. 
 ## Radial file atlas
 
 The Disk screen now shows a radial orbit of **actual USB entries** (not demo counts). Points are grouped by folder, document, media and archive types; clicking a point opens its folder or file preview. The regular file grid/list and all existing actions remain below. The **Карта файлов** button toggles the orbit. At most 260 visible/search-matched entries are drawn for responsiveness; search and Favorites/Recent tabs control the displayed set. No files are sent anywhere for visualization. The reference image informs the visual style only; it is not used as an app asset.
+
+## Hierarchical file orbit
+
+The radial map now traverses nested folders (up to 12 levels and 500 entries), draws parent-to-child links and supports zooming with the mouse wheel or +/- buttons, panning by dragging, and resetting with the center button. Click a point to open its folder or file. Indexed text files are ringed in green after pressing **Индексировать для AI**. The visual relationships represent **filesystem parent-child structure**, not semantic similarity between documents. The map is local-only and does not send file metadata to Cloud.ru. The file grid and search still work separately.
