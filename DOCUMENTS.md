@@ -1,12 +1,15 @@
-# ASPKSA Documents (private cloud drive)
+# ASPKSA: USB project storage
 
-The Documents tab is a Yandex-Disk-style file browser backed by Supabase Storage, **not** the GitHub repository and not the visitor's computer.
+The **Документы** tab is a local file manager styled after Yandex Disk. It uses the browser File System Access API, not Supabase. Documents are **not** uploaded to GitHub, Vercel or Supabase.
 
-1. Create a Supabase project and an email/password user in Authentication.
-2. In Supabase SQL Editor run `supabase/storage.sql` after replacing the placeholder UUID with that user's Auth UID. Never run it unchanged. Keep the bucket private.
-3. Set Vercel environment variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (the public/publishable key, **never** service_role). Redeploy.
-4. Open **Документы** and sign in with the Supabase user.
+## First connection
+1. Plug in the external USB SSD/HDD and open ASPKSA in current Chrome or Edge on desktop over HTTPS (or localhost).
+2. Open **Документы** → **Подключить USB**.
+3. In the browser's system folder picker select the **root folder of the USB disk** and grant read/write permission. This one browser permission is mandatory: a website cannot identify or write to an arbitrary USB drive without it.
+4. ASPKSA automatically creates `ASPKSA/` and these folders inside: `Документы/`, `Проекты/`, `Заметки/`, `Исследования/`, `Архив/`. Existing folders and files are preserved.
 
-All objects are stored under `project-documents/ASPKSA/<folder>/<filename>` in the private Supabase bucket. The browser lists folders, creates folders, uploads files (50 MB max), opens files using short-lived signed URLs, and deletes files. Folder deletion, renaming, drag-and-drop, search, document ingestion, and RAG indexing are not implemented yet. Storage files are not written into the Git repository.
+Supports folders, upload, drag-and-drop, name filtering, grid/list view, downloading/opening files, file and simple folder renaming, recursive delete. **Be careful:** deleting a folder permanently deletes its contents. Renaming folders that contain nested folders is not yet supported. Existing filenames are confirmed before overwrite.
 
-Supabase Auth controls access; the SQL policies restrict access to the single configured user. Do not share the account password. Cloud deployment, credentials and SQL setup are still required.
+The USB disk must be connected whenever documents are accessed. After page reload, the user may need to grant access again; no silent access to local drives. Safari/Firefox and some mobile browsers do not support the required API. This UI is local storage, not an online sync service. RAG ingestion/indexing of files is a separate feature and is not yet implemented.
+
+Cloud.ru AI chat remains a separate server-side service and does not automatically have access to USB files.
