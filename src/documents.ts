@@ -3,11 +3,11 @@ type PickerWindow = Window & { showDirectoryPicker?: (options?: {mode?:'readwrit
 let drive:FileSystemDirectoryHandle|null=null;
 let current:string[]=[];
 let mode:'grid'|'list'='grid';
-const defaults=['Документы','Проекты','Заметки','Исследования','Архив'];
+
 const text=(tag:string,cls:string,value='')=>{const e=document.createElement(tag);e.className=cls;e.textContent=value;return e;};
 const clean=(name:string)=>name.trim().replace(/[\\/\x00-\x1f]/g,'_').slice(0,120);
 async function directory(){if(!drive)throw Error('USB не подключён');let dir=drive;for(const name of current)dir=await dir.getDirectoryHandle(name);return dir;}
-async function initialize(){const picker=(window as PickerWindow).showDirectoryPicker;if(!picker)throw Error('Используй Chrome или Edge на компьютере через HTTPS. Этот браузер не поддерживает доступ к USB-папкам.');const disk=await picker({mode:'readwrite'});drive=await disk.getDirectoryHandle('ASPKSA',{create:true});for(const name of defaults)await drive.getDirectoryHandle(name,{create:true});current=[];}
+async function initialize(){const picker=(window as PickerWindow).showDirectoryPicker;if(!picker)throw Error('Используй Chrome или Edge на компьютере через HTTPS. Этот браузер не поддерживает доступ к USB-папкам.');const disk=await picker({mode:'readwrite'});const project=await disk.getDirectoryHandle('Aspksa',{create:true});drive=await project.getDirectoryHandle('Документы',{create:true});current=[];}
 async function removeTree(dir:FileSystemDirectoryHandle,name:string){await dir.removeEntry(name,{recursive:true});}
 async function renameEntry(dir:FileSystemDirectoryHandle,entry:FileSystemHandle,newName:string){
  if(entry.kind==='file'){const original=await dir.getFileHandle(entry.name);const file=await original.getFile();const target=await dir.getFileHandle(newName,{create:true});const writable=await target.createWritable();await writable.write(file);await writable.close();await dir.removeEntry(entry.name);}
@@ -26,7 +26,7 @@ export function openDocuments(){
   const list=root.querySelector<HTMLElement>('.drive-list')!,crumbs=root.querySelector<HTMLElement>('.drive-crumbs')!;
   list.replaceChildren();crumbs.replaceChildren();
   if(!drive){status('Подключи USB-диск. ASPKSA сама создаст папку проекта и подпапки.');list.append(text('div','drive-empty','Выбери «Подключить USB» — файлы останутся на твоём диске.'));return;}
-  const home=text('button','','ASPKSA');home.addEventListener('click',()=>{current=[];void refresh();});crumbs.append(home);
+  const home=text('button','','Aspksa / Документы');home.addEventListener('click',()=>{current=[];void refresh();});crumbs.append(home);
   current.forEach((part,i)=>{crumbs.append(text('span','',' / '));const b=text('button','',part);b.addEventListener('click',()=>{current=current.slice(0,i+1);void refresh();});crumbs.append(b);});
   try{
    const dir=await directory();const entries:FileSystemHandle[]=[];for await(const entry of dir.values())entries.push(entry);
@@ -43,7 +43,7 @@ export function openDocuments(){
     const remove=text('button','drive-delete','Удалить');remove.addEventListener('click',async()=>{if(!confirm('Удалить «'+entry.name+'» и всё содержимое?'))return;try{await removeTree(dir,entry.name);await refresh();}catch(e){status(String(e));}});
     actions.append(rename,remove);tile.append(icon,name,actions);list.append(tile);
    }
-   status('USB / ASPKSA / '+current.join(' / ')+' · '+entries.length+' элементов');
+   status('USB / Aspksa / Документы / '+current.join(' / ')+' · '+entries.length+' элементов');
   }catch(e){status('Ошибка чтения: '+String(e));}
  };
  root.querySelector('.drive-close')!.addEventListener('click',()=>{root.remove();workspace.classList.remove('documents-open');});
