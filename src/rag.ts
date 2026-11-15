@@ -1,7 +1,26 @@
+import { unzipSync, strFromU8 } from 'fflate';
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+GlobalWorkerOptions.workerSrc=pdfWorkerUrl;
 // Browser-only lexical retrieval. No document index is uploaded or persisted.
 export type RagSource={path:string;excerpt:string;score:number};
 let disk:FileSystemDirectoryHandle|null=null;
-const MAX_FILES=400,MAX_FILE_BYTES=1_000_000,MAX_TOTAL_CHARS=2_000_000;
+const MAX_FILES=400,MAX_FILE_BYTES=8_000_000,MAX_TOTAL_CHARS=2_000_000;
+async function extractText(file:File):Promise<string>{
+ if(/\.pdf$/i.test(file.name)){
+  const pdf=await getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  try{const pages:string[]=[];for(let i=1;i<=Math.min(pdf.numPages,80);i++){const page=await pdf.getPage(i);const content=await page.getTextContent();pages.push(content.items.map(item=>'str' in item?String(item.str):'').join(' '));if(pages.join('').length>100000)break;}return pages.join('\n');}finally{await pdf.destroy();}
+ }
+ if(/\.docx$/i.test(file.name)){
+  const archive=unzipSync(new Uint8Array(await file.arrayBuffer()),{filter:entry=>entry.name==='word/document.xml'&&entry.originalSize<=10_000_000});
+  const xml=archive['word/document.xml'];if(!xml)throw Error('DOCX не содержит document.xml');
+  const doc=new DOMParser().parseFromString(strFromU8(xml),'application/xml');
+  if(doc.querySelector('parsererror'))throw Error('Ошибка XML в DOCX');
+  return [...doc.getElementsByTagName('w:p')].map(p=>[...p.getElementsByTagName('w:t')].map(t=>t.textContent||'').join('')).join('\n');
+ }
+ return file.text();
+}
+
 type Chunk={path:string;text:string;terms:Set<string>};
 let chunks:Chunk[]=[];
 let indexed=0;
@@ -19,10 +38,10 @@ export async function ragIndex():Promise<{files:number;chunks:number;skipped:num
   for await(const entry of dir.values()){
    if(path.length===0&&entry.name==='.aspksa-trash')continue;
    if(entry.kind==='directory'){await walk(await dir.getDirectoryHandle(entry.name),[...path,entry.name],depth+1);continue;}
-   if(!/\.(txt|md|markdown|csv|json|log)$/i.test(entry.name)){skipped++;continue;}
+   if(!/\.(txt|md|markdown|csv|json|log|pdf|docx)$/i.test(entry.name)){skipped++;continue;}
    const file=await(await dir.getFileHandle(entry.name)).getFile();
    if(file.size>MAX_FILE_BYTES){skipped++;continue;}
-   const raw=await file.text();files++;
+   let raw:string;try{raw=await extractText(file);}catch{skipped++;continue;}if(!raw.trim()){skipped++;continue;}files++;
    const remaining=MAX_TOTAL_CHARS-total;const value=raw.slice(0,remaining);total+=value.length;
    const label=[...path,entry.name].join('/');
    for(let i=0;i<value.length;i+=900){const part=value.slice(i,i+1200);if(part.trim())fresh.push({path:label,text:part,terms:new Set(tokens(part))});}

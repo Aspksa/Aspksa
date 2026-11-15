@@ -186,3 +186,5 @@
 .drive-atlas-canvas{cursor:grab}
 .drive-atlas-canvas:active{cursor:grabbing}
 @media(max-width:760px){.drive-atlas-controls{top:auto;bottom:35px;right:10px}.drive-atlas-controls span{display:none}.drive-atlas-heading small{max-width:180px}}
+
+.rag-sources{display:flex;flex-direction:column;align-items:flex-start;gap:7px}.rag-sources strong{font-size:12px;color:#86e9d4}.rag-sources button{max-width:100%;text-align:left;overflow-wrap:anywhere;border:1px solid #32646a;border-radius:8px;padding:7px 10px;background:#10333d;color:#bcefe6;cursor:pointer}.rag-sources button:hover{background:#20565d}
