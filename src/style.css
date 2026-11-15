@@ -89,3 +89,49 @@
 .drive-star{color:#e3c77a!important}
 .drive-grid .drive-location{margin:5px 0 12px}
 .drive-rows .drive-location{margin-right:auto}
+
+/* ASPKSA Drive — dedicated visual design */
+.workspace.documents-open{display:block;background:#081722}
+.drive{height:100%;padding:30px clamp(18px,4.5vw,72px) 50px;background:radial-gradient(ellipse at 70% 0%,rgba(25,77,84,.18),transparent 50%),#081722}
+.drive-head{align-items:flex-start;border-bottom:1px solid #183642;padding-bottom:25px}
+.drive-brand{display:flex;align-items:center;gap:16px}
+.drive-brand-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:16px;background:linear-gradient(145deg,#0c6668,#123643);font-size:32px;color:#62e6d3;box-shadow:0 8px 24px #031016}
+.drive-head h2{margin:4px 0 5px;font-size:clamp(23px,2.5vw,32px);letter-spacing:-.03em;color:#e9f8f7}
+.drive-head p{margin:0;color:#8caab4;font-size:13px}
+.drive-head-right{display:flex;align-items:center;gap:18px}
+.drive-connection{border:1px solid #39515a;color:#94aeb8;background:#112b36;padding:8px 12px;border-radius:30px;font-size:12px;white-space:nowrap}
+.drive-connection.connected{border-color:#286f66;color:#68e6bd;background:#10372f}
+.drive-close{border:1px solid #29454e!important;border-radius:12px;padding:7px 12px;font-size:16px}
+.drive-location-bar{display:flex;align-items:center;justify-content:space-between;gap:20px;background:#102936;border:1px solid #214450;border-radius:18px;padding:12px 18px;margin:25px 0 14px}
+.drive-crumbs{flex:1;min-width:0;font-size:13px;color:#78e0d0}
+.drive-crumbs button{padding:6px 3px;font-size:13px;white-space:normal;text-align:left}
+.drive-search-wrap{display:flex;align-items:center;gap:8px;min-width:250px;max-width:420px;width:38%;background:#0a202c;border:1px solid #234b57;border-radius:12px;padding:0 12px;color:#76acb5}
+.drive-search-wrap span{font-size:25px;line-height:1}
+.drive-search{border:0;min-width:0;width:100%;background:transparent;padding:12px 0;font-size:13px}
+.drive-toolbar{padding:6px 0 12px;border:0}
+.drive-actions{flex-wrap:wrap;align-items:center}
+.drive-actions button{background:#173844;border:1px solid #2b505b;border-radius:12px;padding:11px 17px;font-size:13px;transition:background .15s,transform .15s}
+.drive-actions button:hover{background:#23505b;transform:translateY(-1px)}
+.drive-actions .drive-primary{background:#128a85;border-color:#21a9a2;color:#fff}
+.drive-actions .drive-primary:hover{background:#19a49c}
+.drive-tools{margin:0 0 5px}
+.drive-status{padding:4px 0 9px;min-height:24px}
+.drive-tabs{gap:4px;border-bottom:1px solid #21404c;margin:8px 0 20px;padding-bottom:12px}
+.drive-tabs button{border:0;background:transparent;border-radius:9px;color:#a0bcc5;padding:10px 16px;font-size:13px}
+.drive-tabs button.active{border:0;background:#13424b;color:#69e9d8}
+.drive-section-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:20px 0 16px}
+.drive-section-heading h3{margin:0;color:#e6f4f5;font-size:16px}
+.drive-section-heading span{color:#688f9a;font-size:12px}
+.drive-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+.drive-grid .drive-item{min-height:195px;padding:20px;background:#112d3a;border:1px solid #244b57;border-radius:18px;box-shadow:0 8px 24px #04101940;transition:transform .15s,border-color .15s,background .15s}
+.drive-grid .drive-item:hover{transform:translateY(-2px);border-color:#358c8b;background:#163642}
+.drive-grid .drive-icon{font-size:43px;line-height:1.3}
+.drive-grid .drive-name{font-size:14px;font-weight:600;color:#e4f6f5;margin-top:9px;overflow-wrap:anywhere}
+.drive-grid .drive-location{font-size:11px;color:#88aab2}
+.drive-grid .drive-item-actions{gap:10px;padding-top:8px}
+.drive-item-actions button{font-size:11px;border-radius:6px;padding:5px 3px}
+.drive-item-actions button:hover{color:#e5f9f6;background:#1c4550}
+.drive-rows .drive-item{background:#102935;border-radius:12px;margin-bottom:8px;padding:14px 17px;border:1px solid #1b404b}
+.drive-rows .drive-name{font-weight:500}
+.drive-empty{border:1px dashed #28515a;border-radius:18px;background:#0e2632;padding:55px 18px;margin-top:10px}
+@media(max-width:760px){.drive{padding:20px 15px 35px}.drive-head{gap:10px}.drive-brand{gap:10px}.drive-brand-icon{width:42px;height:42px;font-size:26px}.drive-head-right{gap:7px}.drive-connection{font-size:10px;padding:6px 8px}.drive-location-bar{flex-direction:column;align-items:stretch;padding:12px}.drive-search-wrap{max-width:none;width:100%;min-width:0}.drive-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.drive-grid .drive-item{padding:13px;min-height:180px}.drive-grid .drive-icon{font-size:34px}.drive-section-heading span{display:none}.drive-tabs{overflow-x:auto;flex-wrap:nowrap}.drive-tabs button{white-space:nowrap}.drive-actions button{padding:9px 11px;font-size:12px}}
